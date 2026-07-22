@@ -11,7 +11,7 @@ type Props = {
   label: string;
   onPress: () => void;
   isLoading?: boolean;
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "destructive";
   disabled?: boolean;
 };
 
@@ -28,6 +28,7 @@ export function Button({
   }));
 
   const isPrimary = variant === "primary";
+  const isDestructive = variant === "destructive";
 
   if (isPrimary) {
     return (
@@ -62,7 +63,7 @@ export function Button({
     );
   }
 
-  // Secondary Button
+  // Destructive / Secondary Button
   return (
     <Animated.View style={[animStyle, { borderRadius: 16 }]} className="w-full">
       <Pressable
@@ -74,14 +75,14 @@ export function Button({
         onPressOut={() => {
           scale.value = withSpring(1);
         }}
-        className={`w-full py-4 rounded-2xl items-center justify-center bg-white border border-[#E8E8E8] active:border-primary active:bg-[#FFF5F0] ${
-          disabled || isLoading ? "opacity-50" : ""
-        }`}
+        className={`w-full py-4 rounded-2xl items-center justify-center bg-white border ${
+          isDestructive ? "border-[#F72C25] active:bg-[#FFF5F5]" : "border-[#E8E8E8] active:border-primary active:bg-[#FFF5F0]"
+        } ${disabled || isLoading ? "opacity-50" : ""}`}
       >
         {isLoading ? (
-          <ActivityIndicator color="#FF6B35" />
+          <ActivityIndicator color={isDestructive ? "#F72C25" : "#FF6B35"} />
         ) : (
-          <Text className="text-[#1A1A1A] text-center font-semibold text-base">
+          <Text className={`${isDestructive ? "text-[#F72C25]" : "text-[#1A1A1A]"} text-center font-semibold text-base`}>
             {label}
           </Text>
         )}
@@ -89,3 +90,4 @@ export function Button({
     </Animated.View>
   );
 }
+

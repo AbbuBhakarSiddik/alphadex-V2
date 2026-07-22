@@ -135,3 +135,37 @@ If you want a standalone Android app (`.apk`) that can be installed on any devic
    *   EAS will upload your project and build the APK in the cloud.
    *   Once the build completes, the terminal will print a **QR code** linking to the build details page.
    *   Scan this QR code with your phone's camera. It will open the Expo build page where you can tap **Download APK** and install the app directly on your Android phone!
+
+---
+
+## 🔑 Configuring Google Sign-In
+
+To use the **Continue with Google** button, you must configure Google OAuth credentials in both Google Cloud Console and your Supabase Dashboard.
+
+### Step 1: Create OAuth Credentials on Google Cloud
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create or select a project.
+3. Navigate to **APIs & Services** > **Credentials**.
+4. Click **Create Credentials** and select **OAuth client ID**.
+5. Set the **Application type** to **Web application** (Supabase handles the OAuth exchange on its servers).
+6. Under **Authorized redirect URIs**, add your Supabase redirect callback URL:
+   `https://<your-supabase-project-ref>.supabase.co/auth/v1/callback`
+   *(Replace `<your-supabase-project-ref>` with your actual Supabase project reference).*
+7. Click **Create** and copy the generated **Client ID** and **Client Secret**.
+
+### Step 2: Enable Google Provider in Supabase Dashboard
+1. Go to your [Supabase Dashboard](https://supabase.com/dashboard).
+2. Go to **Authentication** > **Providers** > **Google**.
+3. Toggle Google provider **ON**.
+4. Paste the **Client ID** and **Client Secret** you obtained in Step 1.
+5. Click **Save**.
+
+### Step 3: Configure Mobile Redirect URLs in Supabase
+Because the OAuth flow opens in a mobile browser overlay, Supabase needs to know which deep links are allowed to redirect back into the mobile app.
+1. In your Supabase Dashboard, navigate to **Authentication** > **URL Configuration**.
+2. Under **Redirect URLs**, add the following deep links:
+   *   `alphadex:///(auth)/login` (For standalone built APKs)
+   *   `exp://192.168.x.x:8081/--/(auth)/login` (For local Expo Go testing — replace `192.168.x.x` with your computer's actual local IP address).
+3. Under **Site URL**, you can set `alphadex://`.
+4. Click **Save**.
+

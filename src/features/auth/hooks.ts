@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "./store";
-import { fetchProfile, signIn, signOut, signUp } from "./api";
+import { fetchProfile, signIn, signOut, signUp, signInWithGoogle } from "./api";
 import type { AuthCredentials } from "./types";
 
 /**
@@ -58,6 +58,7 @@ export function useAuth() {
     isAdmin: profile?.role === "admin",
     signIn: (creds: AuthCredentials) => signIn(creds),
     signUp: (creds: AuthCredentials) => signUp(creds),
+    signInWithGoogle: () => signInWithGoogle(),
     signOut: () => signOut(),
   };
 }
