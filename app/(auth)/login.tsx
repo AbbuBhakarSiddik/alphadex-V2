@@ -8,11 +8,26 @@ import { Button } from "../../src/components/ui/Button";
 import { useAuth } from "../../src/features/auth/hooks";
 
 export default function Login() {
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  async function handleGoogleSignIn() {
+    setIsGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      Alert.alert(
+        "Google sign-in failed",
+        err instanceof Error ? err.message : "Please try again."
+      );
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }
 
   async function handleSubmit() {
     if (!email || !password) {
@@ -56,7 +71,7 @@ export default function Login() {
           keyboardType="email-address"
           placeholder="you@example.com"
         />
-        
+
         <View className="relative">
           <TextField
             label="Password"
@@ -65,8 +80,8 @@ export default function Login() {
             secureTextEntry
             placeholder="••••••••"
           />
-          <Pressable 
-            onPress={() => Alert.alert("Reset Password", "A reset link will be sent to your email (stub).")} 
+          <Pressable
+            onPress={() => Alert.alert("Reset Password", "A reset link will be sent to your email (stub).")}
             className="absolute right-0 top-0.5"
           >
             <Text className="text-[#FF6B35] text-sm font-medium">Forgot?</Text>
@@ -75,17 +90,18 @@ export default function Login() {
 
         <View className="mt-4 gap-4">
           <Button label="Sign In" onPress={handleSubmit} isLoading={isLoading} variant="primary" />
-          
+
           <View className="flex-row items-center justify-center my-2">
             <View className="flex-1 h-[1px] bg-[#E8E8E8]" />
             <Text className="text-gray-400 text-xs px-3">or</Text>
             <View className="flex-1 h-[1px] bg-[#E8E8E8]" />
           </View>
 
-          <Button 
-            label="Continue with Google" 
-            onPress={() => Alert.alert("SSO Login", "Google authentication is coming soon.")} 
-            variant="secondary" 
+          <Button
+            label="Continue with Google"
+            onPress={handleGoogleSignIn}
+            isLoading={isGoogleLoading}
+            variant="secondary"
           />
         </View>
 

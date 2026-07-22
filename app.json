@@ -16,7 +16,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.alphalive.alphadex"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -26,7 +27,6 @@
       "expo-router"
     ],
     "scheme": "alphadex",
-    "newArchEnabled": true,
     "extra": {
       "router": {},
       "eas": {

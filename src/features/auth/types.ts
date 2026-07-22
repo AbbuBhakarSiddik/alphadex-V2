@@ -9,4 +9,5 @@ export type Profile = {
 export type AuthCredentials = {
   email: string;
   password: string;
+  fullName?: string;
 };
