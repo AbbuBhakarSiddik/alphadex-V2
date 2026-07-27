@@ -6,6 +6,7 @@ type FeedState = {
   isLoading: boolean;
   isRefreshing: boolean;
   error: string | null;
+  needsRefresh: boolean;
   setItems: (items: ScoredContentItem[]) => void;
   toggleAction: (
     contentId: string,
@@ -15,6 +16,7 @@ type FeedState = {
   setLoading: (v: boolean) => void;
   setRefreshing: (v: boolean) => void;
   setError: (v: string | null) => void;
+  setNeedsRefresh: (v: boolean) => void;
 };
 
 export const useFeedStore = create<FeedState>((set) => ({
@@ -22,6 +24,7 @@ export const useFeedStore = create<FeedState>((set) => ({
   isLoading: false,
   isRefreshing: false,
   error: null,
+  needsRefresh: false,
   setItems: (items) => set({ items }),
   toggleAction: (contentId, action, value) =>
     set((state) => ({
@@ -32,4 +35,5 @@ export const useFeedStore = create<FeedState>((set) => ({
   setLoading: (isLoading) => set({ isLoading }),
   setRefreshing: (isRefreshing) => set({ isRefreshing }),
   setError: (error) => set({ error }),
+  setNeedsRefresh: (needsRefresh) => set({ needsRefresh }),
 }));

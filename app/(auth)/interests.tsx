@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,6 +22,7 @@ import {
 } from "lucide-react-native";
 import { Chip } from "../../src/components/ui/Chip";
 import { Button } from "../../src/components/ui/Button";
+import { setUserInterests } from "../../src/features/interests/api";
 
 const TOPICS = [
   { id: "math", name: "Mathematics", icon: Calculator },
@@ -44,12 +45,25 @@ const TOPICS = [
 export default function Interests() {
   const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const toggleSelect = (id: string) => {
     if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter((x) => x !== id));
     } else {
       setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleContinue = async () => {
+    setIsSaving(true);
+    try {
+      await setUserInterests(selectedIds);
+      router.replace("/(tabs)/feed");
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to save your interests.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -106,7 +120,8 @@ export default function Interests() {
 
         <Button
           label="Continue →"
-          onPress={() => router.replace("/(tabs)/feed")}
+          onPress={handleContinue}
+          isLoading={isSaving}
           disabled={isContinueDisabled}
           variant="primary"
         />
@@ -114,3 +129,4 @@ export default function Interests() {
     </SafeAreaView>
   );
 }
+

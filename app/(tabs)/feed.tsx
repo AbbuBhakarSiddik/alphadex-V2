@@ -1,22 +1,72 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
 import { Sparkles, CirclePlay, Newspaper, Inbox } from "lucide-react-native";
 import { useAuth } from "../../src/features/auth/hooks";
 import { useFeed } from "../../src/features/feed/hooks";
+import { getUserInterests } from "../../src/features/interests/api";
 import { ContentCard } from "../../src/components/layout/ContentCard";
 import { Chip } from "../../src/components/ui/Chip";
 import { GradientButton } from "../../src/components/ui/GradientButton";
 
+type SourceFilter = "all" | "youtube" | "news";
+
 export default function Feed() {
   const { profile } = useAuth();
-  const { items, isLoading, isRefreshing, error, refresh, like, save } = useFeed();
-  const [activeFilter, setActiveFilter] = useState<"all" | "youtube" | "news">("all");
+  const {
+    items,
+    isLoading,
+    isRefreshing,
+    error,
+    needsRefresh,
+    setNeedsRefresh,
+    refresh,
+    like,
+    save,
+  } = useFeed();
 
-  const filteredItems = items.filter(
-    (item) => activeFilter === "all" || item.source === activeFilter
+  const [activeSourceFilter, setActiveSourceFilter] = useState<SourceFilter>("all");
+  const [activeTopicFilter, setActiveTopicFilter] = useState<string | null>(null);
+  const [userTopics, setUserTopics] = useState<string[]>([]);
+
+  // Load user interests to display as topic chips
+  const loadTopics = useCallback(async () => {
+    try {
+      const topics = await getUserInterests();
+      setUserTopics(topics);
+    } catch {
+      // Non-critical — just skip topic chips if unavailable
+    }
+  }, []);
+
+  // On first mount, load topics
+  useEffect(() => {
+    loadTopics();
+  }, [loadTopics]);
+
+  // Refresh feed on focus if interests were updated
+  useFocusEffect(
+    useCallback(() => {
+      if (needsRefresh) {
+        setNeedsRefresh(false);
+        loadTopics();
+        refresh();
+      }
+    }, [needsRefresh, setNeedsRefresh, refresh, loadTopics])
   );
+
+  // Apply source + topic filters
+  const filteredItems = items.filter((item) => {
+    const sourceMatch = activeSourceFilter === "all" || item.source === activeSourceFilter;
+    const topicMatch =
+      !activeTopicFilter ||
+      `${item.title ?? ""} ${item.description ?? ""}`
+        .toLowerCase()
+        .includes(activeTopicFilter.toLowerCase());
+    return sourceMatch && topicMatch;
+  });
 
   const renderSkeleton = () => (
     <ScrollView className="flex-1 px-6 mt-4" showsVerticalScrollIndicator={false}>
@@ -41,6 +91,8 @@ export default function Feed() {
     </ScrollView>
   );
 
+  const hasContent = !isLoading && !error && items.length > 0;
+
   return (
     <SafeAreaView className="flex-1 bg-[#FAFAFA]" edges={["top"]}>
       {/* Header */}
@@ -62,9 +114,9 @@ export default function Feed() {
         )}
       </View>
 
-      {/* Filter Chip ScrollView */}
-      {!isLoading && !error && items.length > 0 && (
-        <View className="py-2.5">
+      {/* Source filter chips */}
+      {hasContent && (
+        <View className="pt-2 pb-1">
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -72,22 +124,49 @@ export default function Feed() {
           >
             <Chip
               label="All Content"
-              isActive={activeFilter === "all"}
+              isActive={activeSourceFilter === "all"}
               icon={Sparkles}
-              onPress={() => setActiveFilter("all")}
+              onPress={() => setActiveSourceFilter("all")}
             />
             <Chip
               label="Videos"
-              isActive={activeFilter === "youtube"}
+              isActive={activeSourceFilter === "youtube"}
               icon={CirclePlay}
-              onPress={() => setActiveFilter("youtube")}
+              onPress={() => setActiveSourceFilter("youtube")}
             />
             <Chip
               label="Articles"
-              isActive={activeFilter === "news"}
+              isActive={activeSourceFilter === "news"}
               icon={Newspaper}
-              onPress={() => setActiveFilter("news")}
+              onPress={() => setActiveSourceFilter("news")}
             />
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Topic chips from user interests */}
+      {hasContent && userTopics.length > 0 && (
+        <View className="pb-2">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 24, gap: 8 }}
+          >
+            <Chip
+              label="All Topics"
+              isActive={activeTopicFilter === null}
+              onPress={() => setActiveTopicFilter(null)}
+            />
+            {userTopics.map((topic) => (
+              <Chip
+                key={topic}
+                label={topic.charAt(0).toUpperCase() + topic.slice(1)}
+                isActive={activeTopicFilter === topic}
+                onPress={() =>
+                  setActiveTopicFilter(activeTopicFilter === topic ? null : topic)
+                }
+              />
+            ))}
           </ScrollView>
         </View>
       )}
@@ -114,7 +193,7 @@ export default function Feed() {
             Follow some channels or pick a few interests to get content flowing in.
           </Text>
           <View className="w-48">
-            <GradientButton label="Explore Topics" onPress={() => {}} />
+            <GradientButton label="Explore Topics" onPress={refresh} />
           </View>
         </View>
       ) : filteredItems.length === 0 ? (
@@ -123,15 +202,23 @@ export default function Feed() {
           <Text className="text-[#1A1A1A] text-lg font-semibold mb-1">
             No matches found
           </Text>
-          <Text className="text-gray-500 text-center text-sm">
+          <Text className="text-gray-500 text-center text-sm mb-4">
             Try switching to another filter or check back later.
           </Text>
+          {activeTopicFilter !== null && (
+            <View className="w-48">
+              <GradientButton
+                label="Clear Topic Filter"
+                onPress={() => setActiveTopicFilter(null)}
+              />
+            </View>
+          )}
         </View>
       ) : (
         <FlashList
           data={filteredItems}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32 }}
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32, paddingTop: 4 }}
           renderItem={({ item }) => (
             <ContentCard
               item={item}

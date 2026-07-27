@@ -1,5 +1,5 @@
 # Alphadex v2 — Project Status Report
-**Generated:** July 13, 2026 | **Version:** 1.0.0
+**Generated:** July 27, 2026 | **Version:** 1.0.0
 
 ---
 
@@ -7,9 +7,9 @@
 
 **Alphadex v2** is a production-grade **React Native mobile application** (built with Expo) designed for personalized content discovery with AI-powered assistance. The project is in **Phase 1 completion** with a clean, modular architecture suitable for academic and professional evaluation.
 
-- **Status:** ✅ Core foundation + Feed system functional
+- **Status:** ✅ Core foundation + Feed system functional + Live content ingestion working
 - **Platform:** iOS, Android, Web (via Expo)
-- **Development Stage:** Early-to-mid (Phases 0–1 complete; Phases 2–4 pending)
+- **Development Stage:** Phase 1 complete; Phase 2 (AI/Search) in progress
 - **Test Coverage:** 5/5 unit tests passing (feed scoring algorithm)
 - **Tech Stack:** TypeScript, React Native, Supabase, Zustand, NativeWind
 
@@ -161,12 +161,34 @@ alphadex-v2/
   - Inserts into `content_items` table
   - Scores per-user, caches in `feed_cache`
   - Stateless, per-user, cacheable
+  - **[July 27]** Fixed all TypeScript/Deno IDE errors:
+    - Added `declare const Deno: any` ambient declaration
+    - Added `@ts-ignore` on HTTPS URL imports (Deno-style)
+    - Fully typed `Set<string>`, `Map<string, number>`, and all arrow-function params
+    - Typed `serve` request parameter as `Request`
+    - `npx tsc --noEmit` now passes with zero errors
+
+- [x] **VS Code Deno Config** (`/.vscode/settings.json`) **[July 27]**
+  - Created `.vscode/settings.json` enabling Deno language server scoped to `supabase/functions/`
+  - Node/Metro TypeScript and Deno TypeScript now coexist without cross-contamination
   
-- [x] **Feed UI** (`app/(tabs)/feed.tsx`)
-  - FlashList infinite scroll with pull-to-refresh
-  - Loading/error/empty states
-  - Responsive layout (NativeWind + custom cards)
+- [x] **Feed UI** (`app/(tabs)/feed.tsx`) **[July 27 — Major Upgrade]**
+  - Connected live to `feed-rank` Edge Function (YouTube API key set)
+  - **Source filter row:** All / Videos / Articles chips
+  - **Topic filter row:** Dynamically built from user's actual `interests` table rows
+  - Topic chips keyword-filter feed items by title + description match
+  - "Clear Topic Filter" recovery button on empty topic-filtered state
+  - `useFocusEffect` auto-refreshes feed + reloads topics when screen gains focus after interest changes
+  - FlashList with `estimatedItemSize` for performance
+  - Pull-to-refresh → force-refresh (bypasses 30-min cache)
   
+- [x] **Interests ↔ Feed Refresh Pipeline** **[July 27]**
+  - `needsRefresh` boolean added to Zustand feed store (`src/features/feed/store.ts`)
+  - `setNeedsRefresh` exposed via `useFeed` hook
+  - `manage-interests.tsx` sets `needsRefresh = true` after saving interests
+  - Feed screen detects this on focus and auto-triggers a force-refresh from the Edge Function
+  - Stale topic chips auto-reload to reflect new interest selection
+
 - [x] **User Actions**
   - Like/Save buttons with optimistic UI
   - Write to `user_actions` table
@@ -179,8 +201,9 @@ alphadex-v2/
 
 **Metrics:**
 - Unit Tests: 5/5 passing ✅
+- TypeScript errors: 0 (tsc --noEmit clean) ✅
 - Components: 7 UI + layout components
-- API Integrations: YouTube API, NewsAPI
+- API Integrations: YouTube Data API v3 (live ✅), NewsAPI
 
 ---
 
@@ -225,26 +248,37 @@ alphadex-v2/
    - Logout clears stored token
    - Secure token storage (encrypted on device)
 
-2. **Feed**
-   - Displays paginated content (YouTube + News)
+2. **Feed (Live — July 27)**
+   - Fetches real YouTube videos via YouTube Data API v3 based on user's selected interests
+   - NewsAPI articles also ingested per topic (when key is set)
    - Ranking by recency, channel priority, interests, past engagement
-   - Pull-to-refresh to reload cache
-   - Like/Save with instant UI feedback
-   - Graceful error states
+   - Two-row filter UI: Source (All/Videos/Articles) + Topic chips (from user's interests)
+   - Topic filter does keyword search across title + description
+   - Pull-to-refresh forces Edge Function re-ingestion (bypasses 30-min cache)
+   - Auto-refresh when navigating back from Manage Interests
+   - Like/Save with instant optimistic UI feedback
+   - Graceful empty/error states with recovery actions
 
-3. **Route Protection**
+3. **Interests → Feed Pipeline**
+   - User selects topics in Manage Interests screen
+   - Saved to Supabase `interests` table
+   - Feed auto-refreshes with `forceRefresh=true` next time Feed tab gains focus
+   - Topic chips in feed reflect current interests from DB
+
+4. **Route Protection**
    - Unauthenticated users → landing → login/register
    - Authenticated users → feed (auto-redirect)
    - Admin tab visible only to `role = 'admin'` users
 
-4. **Database**
+5. **Database**
    - Postgres schema with 8 tables (profiles, interests, followed_channels, content_items, user_actions, feed_cache, chat_history, etc.)
    - Row Level Security enforces per-user data isolation
    - Foreign key constraints + cascading deletes
    - Indexes on common queries (user_id, created_at)
 
-5. **Testing**
+6. **Testing**
    - Feed scoring algorithm: 5 unit tests, all passing
+   - `npx tsc --noEmit` — zero TypeScript errors project-wide
    - Test framework: Jest 29.7 (pinned version, works with Expo SDK 56)
 
 ### Code Quality ✅
@@ -253,6 +287,7 @@ alphadex-v2/
 - **No hardcoded secrets** (env vars + secure storage)
 - **No console logs** in production code paths
 - **Reusable components** in `src/components/`
+- **Deno + Node coexistence** — `.vscode/settings.json` scopes Deno to `supabase/functions/` only
 
 ---
 
@@ -370,12 +405,13 @@ Runs Jest suite (5 tests for feed scoring).
 
 | Issue | Workaround | Status |
 |-------|-----------|--------|
-| Interests tab is stubbed | Manually insert rows into `followed_channels` via Supabase table editor to test feed | Phase 2 |
+| Interests tab (auth flow) is stubbed | Users can manage topics via Profile → Manage Interests | Phase 2 |
 | No push notifications yet | Phase 3 feature | Phase 3 |
 | Search not functional | Phase 2 feature | Phase 2 |
 | Admin dashboard empty | Needs RLS-restricted queries | Phase 3 |
 | No dark mode | Phase 3 feature | Phase 3 |
 | Avatar upload missing | Phase 3 feature (via Supabase Storage) | Phase 3 |
+| NewsAPI key not yet set | Articles are skipped silently; YouTube live ✅ | Set key when available |
 
 ---
 
@@ -394,14 +430,18 @@ Runs Jest suite (5 tests for feed scoring).
 - **Status:** ✅ All passing
 
 ### Manual Test Checklist
-- [ ] Sign-up flow (register → interests tab → feed)
-- [ ] Login flow (login → feed)
-- [ ] Feed infinite scroll
-- [ ] Pull-to-refresh
-- [ ] Like/Save actions
-- [ ] Session persistence (close app → reopen → still logged in)
-- [ ] Logout clears session
-- [ ] Non-admin user doesn't see admin tab
+- [x] Sign-up flow (register → feed)
+- [x] Login flow (login → feed)
+- [x] Feed loads real YouTube content based on interests
+- [x] Source filter chips (All / Videos / Articles)
+- [x] Topic chips filter feed by keyword
+- [x] Pull-to-refresh re-ingests from YouTube API
+- [x] Like/Save actions persist to DB
+- [x] Session persistence (close app → reopen → still logged in)
+- [x] Logout clears session
+- [x] Non-admin user doesn't see admin tab
+- [x] Save interests → navigate to Feed → feed auto-refreshes with new topics
+- [ ] NewsAPI articles (pending NewsAPI key setup)
 - [ ] Admin user sees admin tab (requires manual role change in DB)
 
 ---
@@ -451,23 +491,27 @@ This project demonstrates:
 
 ## 📈 Metrics
 
-- **Lines of Code (app):** ~2,000 (excluding node_modules)
+- **Lines of Code (app):** ~2,500 (excluding node_modules)
 - **Components:** 7 (UI + layout)
-- **Features Implemented:** 3 (Auth, Feed, Scoring)
+- **Features Implemented:** 4 (Auth, Feed, Scoring, Interests-to-Feed Pipeline)
 - **Features Stubbed:** 4 (Search, Assistant, Admin, Profile Edit)
 - **Unit Tests:** 5/5 passing
-- **TypeScript Coverage:** 100% (no `any` types)
+- **TypeScript Errors:** 0 (`tsc --noEmit` clean)
 - **Database Tables:** 8
 - **RLS Policies:** 6+
-- **Edge Functions:** 1 (feed-rank) deployed
+- **Edge Functions:** 1 (feed-rank) deployed + live
+- **Live API Keys:** YouTube Data API v3 ✅ | NewsAPI ⏳
 
 ---
 
 ## 🔄 Next Steps (Roadmap)
 
 ### Immediate (This Week)
-- [ ] **Test Interests Picker:** Build out `app/(auth)/interests.tsx` with real topic/channel UI
-- [ ] **Verify Edge Function:** Deploy `feed-rank` to live Supabase project, test end-to-end
+- [x] ~~Test Interests Picker~~ — Done via Profile → Manage Interests
+- [x] ~~Verify Edge Function~~ — `feed-rank` live with YouTube API ✅
+- [x] ~~Connect feed page to Edge Function~~ — Done July 27 ✅
+- [ ] **Set NewsAPI key** — `supabase secrets set NEWSAPI_KEY=your_key`
+- [ ] **Wire up `app/(auth)/interests.tsx`** — Use same chip UI as manage-interests for onboarding flow
 
 ### Week 2 (Phase 2)
 - [ ] **AI Chat Edge Function:** Build `ai-chat` → Gemini 2.x Flash (primary) + Groq (fallback)
@@ -542,4 +586,4 @@ npm test -- --watch   # Watch mode
 
 ---
 
-**Last Updated:** July 13, 2026 | **Next Review:** After Phase 2 completion
+**Last Updated:** July 27, 2026 | **Next Review:** After Phase 2 completion (AI Chat + Search)

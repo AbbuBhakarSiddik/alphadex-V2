@@ -1,9 +1,11 @@
-import React from "react";
-import { View, Text, ScrollView, Pressable, Alert } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, ScrollView, Pressable, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Settings, Bell, Bookmark } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { useAuth } from "../../src/features/auth/hooks";
 import { useFeed } from "../../src/features/feed/hooks";
+import { getUserInterests } from "../../src/features/interests/api";
 import { Button } from "../../src/components/ui/Button";
 import { Chip } from "../../src/components/ui/Chip";
 import { ContentCard } from "../../src/components/layout/ContentCard";
@@ -11,6 +13,27 @@ import { ContentCard } from "../../src/components/layout/ContentCard";
 export default function Profile() {
   const { profile, session, signOut } = useAuth();
   const { items, like, save } = useFeed();
+  const router = useRouter();
+
+  const [topics, setTopics] = useState<string[]>([]);
+  const [isLoadingTopics, setIsLoadingTopics] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const result = await getUserInterests();
+        if (isMounted) setTopics(result);
+      } catch {
+        // Non-critical for this screen — just show the empty state below
+      } finally {
+        if (isMounted) setIsLoadingTopics(false);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const savedItems = items.filter((item) => item.saved).slice(0, 2);
   const likedItemsCount = items.filter((item) => item.liked).length;
@@ -18,10 +41,10 @@ export default function Profile() {
 
   const initials = profile?.full_name
     ? profile.full_name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
     : session?.user?.email?.[0]?.toUpperCase() ?? "A";
 
   return (
@@ -75,11 +98,26 @@ export default function Profile() {
           <Text className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">
             My Topics
           </Text>
-          <View className="flex-row flex-wrap gap-2">
-            <Chip label="Mathematics" isActive={true} />
-            <Chip label="Computer Science" isActive={true} />
-            <Chip label="AI & ML" isActive={true} />
-          </View>
+          <Pressable
+            onPress={() => router.push("/manage-interests")}
+            className="bg-gray-200 items-center justify-center rounded-xl border-1 border-black px-8 py-3.5 mb-3"
+          >
+            <Text className="text-[#1A1A1A] font-semibold">Manage Interests</Text>
+          </Pressable>
+
+          {isLoadingTopics ? (
+            <ActivityIndicator color="#FF6B35" style={{ marginVertical: 8 }} />
+          ) : topics.length === 0 ? (
+            <Text className="text-gray-400 text-sm">
+              No topics yet — tap "Manage Interests" to add some.
+            </Text>
+          ) : (
+            <View className="flex-row flex-wrap gap-2">
+              {topics.map((topic) => (
+                <Chip key={topic} label={topic} isActive />
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Saved Content Section */}

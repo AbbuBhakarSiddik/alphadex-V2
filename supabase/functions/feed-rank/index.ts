@@ -5,7 +5,11 @@
 //   NEWSAPI_KEY       - https://newsapi.org (free dev tier)
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically by Supabase.
 
+declare const Deno: any;
+
+// @ts-ignore
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+// @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -73,16 +77,18 @@ async function ingestYouTube(
       if (!res.ok) continue;
       const json = await res.json();
 
-      const rows = (json.items ?? []).map((v: any) => ({
-        source: "youtube",
-        external_id: v.id.videoId,
-        title: v.snippet.title,
-        description: v.snippet.description,
-        thumbnail_url: v.snippet.thumbnails?.medium?.url ?? null,
-        channel_id: channelId,
-        published_at: v.snippet.publishedAt,
-        metadata: {},
-      }));
+      const rows = (json.items ?? [])
+        .map((v: any) => ({
+          source: "youtube",
+          external_id: v.id?.videoId,
+          title: v.snippet?.title,
+          description: v.snippet?.description ?? null,
+          thumbnail_url: v.snippet?.thumbnails?.medium?.url ?? null,
+          channel_id: channelId,
+          published_at: v.snippet?.publishedAt ?? null,
+          metadata: {},
+        }))
+        .filter((r: any) => r.external_id && r.title);
 
       if (rows.length > 0) {
         await service
@@ -91,6 +97,47 @@ async function ingestYouTube(
       }
     } catch (_err) {
       // Best-effort ingestion — one failed channel shouldn't break the feed
+      continue;
+    }
+  }
+}
+
+async function ingestYouTubeByTopic(
+  service: ReturnType<typeof createClient>,
+  topics: string[]
+) {
+  const apiKey = Deno.env.get("YOUTUBE_API_KEY");
+  if (!apiKey || topics.length === 0) return;
+
+  for (const topic of topics) {
+    try {
+      // Filter by videoCategoryId=27 (Education) to ensure a high-quality educational feed
+      const url = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&q=${encodeURIComponent(
+        topic
+      )}&part=snippet&order=relevance&maxResults=10&type=video&videoCategoryId=27`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const json = await res.json();
+
+      const rows = (json.items ?? [])
+        .map((v: any) => ({
+          source: "youtube",
+          external_id: v.id?.videoId,
+          title: v.snippet?.title,
+          description: v.snippet?.description ?? null,
+          thumbnail_url: v.snippet?.thumbnails?.medium?.url ?? null,
+          channel_id: v.snippet?.channelId ?? null,
+          published_at: v.snippet?.publishedAt ?? null,
+          metadata: { matchedTopic: topic },
+        }))
+        .filter((r: any) => r.external_id && r.title);
+
+      if (rows.length > 0) {
+        await service
+          .from("content_items")
+          .upsert(rows, { onConflict: "source,external_id" });
+      }
+    } catch (_err) {
       continue;
     }
   }
@@ -108,20 +155,27 @@ async function ingestNews(
       const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(
         topic
       )}&sortBy=publishedAt&pageSize=10&apiKey=${apiKey}`;
-      const res = await fetch(url);
+      // NewsAPI requires a User-Agent header when fetched outside browsers (like in Deno)
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": "alphadex-v2/1.0",
+        },
+      });
       if (!res.ok) continue;
       const json = await res.json();
 
-      const rows = (json.articles ?? []).map((a: any) => ({
-        source: "news",
-        external_id: a.url,
-        title: a.title,
-        description: a.description,
-        thumbnail_url: a.urlToImage,
-        channel_id: a.source?.id ?? a.source?.name ?? null,
-        published_at: a.publishedAt,
-        metadata: {},
-      }));
+      const rows = (json.articles ?? [])
+        .map((a: any) => ({
+          source: "news",
+          external_id: a.url,
+          title: a.title,
+          description: a.description ?? null,
+          thumbnail_url: a.urlToImage ?? null,
+          channel_id: a.source?.id ?? a.source?.name ?? null,
+          published_at: a.publishedAt ?? null,
+          metadata: {},
+        }))
+        .filter((r: any) => r.external_id && r.title);
 
       if (rows.length > 0) {
         await service
@@ -134,7 +188,7 @@ async function ingestNews(
   }
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -201,12 +255,13 @@ serve(async (req) => {
           .eq("action", "like"),
       ]);
 
-    const channelIds = (follows ?? []).map((f) => f.channel_id);
-    const topics = (interests ?? []).map((i) => i.topic.toLowerCase());
+    const channelIds = (follows ?? []).map((f: any) => f.channel_id as string);
+    const topics = (interests ?? []).map((i: any) => i.topic.toLowerCase() as string);
 
     // 3. Ingest fresh content (service role — writes to the shared catalog)
     await Promise.all([
       ingestYouTube(serviceClient, channelIds),
+      ingestYouTubeByTopic(serviceClient, topics),
       ingestNews(serviceClient, topics),
     ]);
 
@@ -222,38 +277,38 @@ serve(async (req) => {
       .select("content_id, action")
       .eq("user_id", user.id);
 
-    const likedIds = new Set(
-      (userActions ?? []).filter((a) => a.action === "like").map((a) => a.content_id)
+    const likedIds = new Set<string>(
+      (userActions ?? []).filter((a: any) => a.action === "like").map((a: any) => a.content_id as string)
     );
-    const savedIds = new Set(
-      (userActions ?? []).filter((a) => a.action === "save").map((a) => a.content_id)
+    const savedIds = new Set<string>(
+      (userActions ?? []).filter((a: any) => a.action === "save").map((a: any) => a.content_id as string)
     );
 
     // Channels the user has liked content from before, even if not followed
-    const likedContentIds = (pastLikes ?? []).map((l) => l.content_id);
-    const likedChannelIds = new Set(
+    const likedContentIds = (pastLikes ?? []).map((l: any) => l.content_id as string);
+    const likedChannelIds = new Set<string>(
       (candidates ?? [])
-        .filter((c) => likedContentIds.includes(c.id) && c.channel_id)
-        .map((c) => c.channel_id as string)
+        .filter((c: any) => likedContentIds.includes(c.id) && c.channel_id)
+        .map((c: any) => c.channel_id as string)
     );
 
     const scoringContext = {
-      followedChannelIds: new Set(channelIds),
-      channelPriority: new Map(
-        (follows ?? []).map((f) => [f.channel_id, f.priority ?? 1])
+      followedChannelIds: new Set<string>(channelIds),
+      channelPriority: new Map<string, number>(
+        (follows ?? []).map((f: any) => [f.channel_id as string, (f.priority ?? 1) as number] as [string, number])
       ),
       interestTopics: topics,
       likedChannelIds,
     };
 
     const ranked = (candidates ?? [])
-      .map((item) => ({
+      .map((item: any) => ({
         ...item,
         score: scoreItem(item as ContentRow, scoringContext),
         liked: likedIds.has(item.id),
         saved: savedIds.has(item.id),
       }))
-      .sort((a, b) => b.score - a.score)
+      .sort((a: any, b: any) => b.score - a.score)
       .slice(0, MAX_ITEMS_RETURNED);
 
     const payload = { items: ranked, generated_at: new Date().toISOString() };
