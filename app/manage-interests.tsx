@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -23,6 +30,8 @@ import {
 import { Chip } from "../src/components/ui/Chip";
 import { Button } from "../src/components/ui/Button";
 import { getUserInterests, setUserInterests } from "../src/features/interests/api";
+import { useInterestsManager } from "../src/features/interests/hooks";
+import { RECOMMENDED_STUDY_CHANNELS } from "../src/features/interests/types";
 import { useFeedStore } from "../src/features/feed/store";
 
 const TOPICS = [
@@ -49,6 +58,13 @@ export default function ManageInterests() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  const {
+    followedChannels,
+    isLoadingChannels,
+    resolvingHandles,
+    followRecommended,
+  } = useInterestsManager();
 
   useEffect(() => {
     let isMounted = true;
@@ -86,7 +102,7 @@ export default function ManageInterests() {
       // Signal the feed to force-refresh with the new interests
       setNeedsRefresh(true);
       Alert.alert("Success", "Interests updated successfully!", [
-        { text: "OK", onPress: () => router.back() }
+        { text: "OK", onPress: () => router.back() },
       ]);
     } catch (err: any) {
       Alert.alert("Error", err.message || "Failed to save your interests.");
@@ -96,6 +112,28 @@ export default function ManageInterests() {
   };
 
   const isSaveDisabled = selectedIds.length < 3;
+
+  /** Returns the channelId for a followed recommended channel, or undefined. */
+  const getFollowedChannelId = (displayName: string): string | undefined =>
+    followedChannels.find(
+      (c) => c.name.toLowerCase() === displayName.toLowerCase()
+    )?.channel_id;
+
+  const handleRecommendedPress = async (
+    handle: string,
+    displayName: string
+  ) => {
+    const followedId = getFollowedChannelId(displayName);
+    const isFollowed = !!followedId;
+    try {
+      await followRecommended(handle, displayName, isFollowed, followedId);
+    } catch (err: any) {
+      Alert.alert(
+        "Error",
+        err.message || `Failed to ${isFollowed ? "unfollow" : "follow"} channel.`
+      );
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#FAFAFA]" edges={["top", "bottom"]}>
@@ -117,7 +155,10 @@ export default function ManageInterests() {
         </View>
       ) : (
         <>
-          <ScrollView className="flex-1 px-6 mt-6" contentContainerStyle={{ paddingBottom: 32 }}>
+          <ScrollView
+            className="flex-1 px-6 mt-6"
+            contentContainerStyle={{ paddingBottom: 32 }}
+          >
             <Text className="text-2xl font-bold text-[#1A1A1A] mb-2">
               Update your topics 🎯
             </Text>
@@ -140,6 +181,53 @@ export default function ManageInterests() {
                 );
               })}
             </View>
+
+            {/* ── Recommended for Study ── */}
+            <Text className="text-lg font-bold text-[#1A1A1A] mb-1">
+              Recommended for Study 📚
+            </Text>
+            <Text className="text-gray-500 text-sm mb-4">
+              Tap to follow top educational YouTube channels instantly.
+            </Text>
+
+            {isLoadingChannels ? (
+              <ActivityIndicator size="small" color="#FF6B35" />
+            ) : (
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {RECOMMENDED_STUDY_CHANNELS.map(({ handle, displayName }) => {
+                  const isResolving = resolvingHandles.has(handle);
+                  const isFollowed = !!getFollowedChannelId(displayName);
+
+                  return (
+                    <Pressable
+                      key={handle}
+                      onPress={() => handleRecommendedPress(handle, displayName)}
+                      disabled={isResolving}
+                      className={`flex-row items-center px-4 py-2 rounded-full border ${
+                        isFollowed
+                          ? "bg-primary border-primary"
+                          : "bg-[#F5F5F5] border-[#E8E8E8]"
+                      }`}
+                    >
+                      {isResolving ? (
+                        <ActivityIndicator
+                          size="small"
+                          color={isFollowed ? "#FFFFFF" : "#FF6B35"}
+                          style={{ marginRight: 6 }}
+                        />
+                      ) : null}
+                      <Text
+                        className={`font-medium text-sm ${
+                          isFollowed ? "text-white" : "text-gray-700"
+                        }`}
+                      >
+                        {displayName}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
           </ScrollView>
 
           {/* Action Container */}
@@ -164,3 +252,4 @@ export default function ManageInterests() {
     </SafeAreaView>
   );
 }
+

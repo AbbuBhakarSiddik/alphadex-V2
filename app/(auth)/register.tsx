@@ -55,7 +55,7 @@ export default function Register() {
     }
     setIsLoading(true);
     try {
-      await signUp({ email, password });
+      await signUp({ email, password, fullName });
       router.push("/(auth)/interests");
     } catch (err) {
       Alert.alert(
