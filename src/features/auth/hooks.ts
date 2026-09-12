@@ -24,13 +24,14 @@ export function useAuthListener() {
       } else {
         setLoading(false);
       }
+      console.log("MY TOKEN:", session?.access_token);
     });
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         if (session?.user) {
-          fetchProfile(session.user.id).then(setProfile).catch(() => {});
+          fetchProfile(session.user.id).then(setProfile).catch(() => { });
         } else {
           setProfile(null);
         }

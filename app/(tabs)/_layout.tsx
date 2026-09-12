@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, Search, Sparkles, User, Shield } from "lucide-react-native";
+import { Home, Search, Sparkles, MessageCircle, User, Shield } from "lucide-react-native";
 import { useAuth } from "../../src/features/auth/hooks";
 
 export default function TabsLayout() {
@@ -27,6 +27,13 @@ export default function TabsLayout() {
         options={{ title: "Assistant", tabBarIcon: ({ color, size }) => <Sparkles color={color} size={size} /> }}
       />
       <Tabs.Screen
+        name="global-chat"
+        options={{
+          title: "Global Chat",
+          tabBarIcon: ({ color, size }) => <MessageCircle color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{ title: "Profile", tabBarIcon: ({ color, size }) => <User color={color} size={size} /> }}
       />
@@ -41,3 +48,4 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
