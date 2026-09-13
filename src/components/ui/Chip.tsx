@@ -19,31 +19,31 @@ export function Chip({ label, isActive, onPress, icon: Icon }: Props) {
     transform: [{ scale: scale.value }],
   }));
 
-  const activeBg = "bg-primary border-primary";
-  const inactiveBg = "bg-[#F5F5F5] border border-[#E8E8E8]";
-  const activeText = "text-white font-medium text-sm";
-  const inactiveText = "text-gray-700 font-medium text-sm";
+  const activeBg = "bg-white border-white";
+  const inactiveBg = "bg-[#1A1A1A] border border-[#27272A]";
+  const activeText = "text-black font-semibold text-xs";
+  const inactiveText = "text-[#A1A1AA] font-medium text-xs";
 
   return (
     <Animated.View style={animStyle}>
       <Pressable
         onPress={onPress}
         onPressIn={() => {
-          scale.value = withSpring(0.95);
+          scale.value = withSpring(0.94, { damping: 16, stiffness: 350 });
         }}
         onPressOut={() => {
-          scale.value = withSpring(1);
+          scale.value = withSpring(1, { damping: 16, stiffness: 350 });
         }}
-        className={`flex-row items-center justify-center px-4 py-2 rounded-full border ${
+        className={`flex-row items-center justify-center px-3.5 py-1.5 rounded-full border ${
           isActive ? activeBg : inactiveBg
         }`}
       >
         {Icon && (
           <Icon
-            size={14}
-            color={isActive ? "#FFFFFF" : "#6B7280"}
-            strokeWidth={1.5}
-            style={{ marginRight: 4 }}
+            size={13}
+            color={isActive ? "#000000" : "#A1A1AA"}
+            strokeWidth={2}
+            style={{ marginRight: 5 }}
           />
         )}
         <Text className={isActive ? activeText : inactiveText}>{label}</Text>

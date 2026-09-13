@@ -136,33 +136,33 @@ export default function ManageInterests() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAFAFA]" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-black" edges={["top", "bottom"]}>
       {/* Header */}
-      <View className="px-6 py-4 flex-row items-center border-b border-[#E8E8E8] bg-white">
+      <View className="px-5 py-3.5 flex-row items-center border-b border-[#1A1A1A] bg-black">
         <Pressable
           onPress={() => router.back()}
-          className="w-10 h-10 bg-white border border-[#E8E8E8] rounded-full items-center justify-center shadow-sm shadow-gray-200/50 mr-4"
+          className="w-9 h-9 bg-[#141414] border border-[#222222] rounded-full items-center justify-center mr-3 active:bg-[#222222]"
         >
-          <ArrowLeft size={20} color="#1A1A1A" strokeWidth={1.5} />
+          <ArrowLeft size={18} color="#FFFFFF" strokeWidth={1.8} />
         </Pressable>
-        <Text className="text-xl font-bold text-[#1A1A1A]">Manage Interests</Text>
+        <Text className="text-lg font-bold text-white tracking-tight">Manage Interests</Text>
       </View>
 
       {isLoading ? (
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#FF6B35" />
-          <Text className="text-gray-500 mt-2">Loading your interests...</Text>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text className="text-[#71717A] text-xs mt-3">Loading your interests...</Text>
         </View>
       ) : (
         <>
           <ScrollView
-            className="flex-1 px-6 mt-6"
+            className="flex-1 px-5 mt-5"
             contentContainerStyle={{ paddingBottom: 32 }}
           >
-            <Text className="text-2xl font-bold text-[#1A1A1A] mb-2">
+            <Text className="text-xl font-bold text-white mb-1 tracking-tight">
               Update your topics 🎯
             </Text>
-            <Text className="text-gray-500 text-sm mb-6">
+            <Text className="text-[#71717A] text-xs mb-5 leading-relaxed">
               Pick at least 3 topics to customize your feeds and AI recommendations.
             </Text>
 
@@ -183,15 +183,15 @@ export default function ManageInterests() {
             </View>
 
             {/* ── Recommended for Study ── */}
-            <Text className="text-lg font-bold text-[#1A1A1A] mb-1">
+            <Text className="text-base font-bold text-white mb-1">
               Recommended for Study 📚
             </Text>
-            <Text className="text-gray-500 text-sm mb-4">
+            <Text className="text-[#71717A] text-xs mb-4">
               Tap to follow top educational YouTube channels instantly.
             </Text>
 
             {isLoadingChannels ? (
-              <ActivityIndicator size="small" color="#FF6B35" />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <View className="flex-row flex-wrap gap-2 mb-4">
                 {RECOMMENDED_STUDY_CHANNELS.map(({ handle, displayName }) => {
@@ -203,22 +203,22 @@ export default function ManageInterests() {
                       key={handle}
                       onPress={() => handleRecommendedPress(handle, displayName)}
                       disabled={isResolving}
-                      className={`flex-row items-center px-4 py-2 rounded-full border ${
+                      className={`flex-row items-center px-3.5 py-1.5 rounded-full border ${
                         isFollowed
-                          ? "bg-primary border-primary"
-                          : "bg-[#F5F5F5] border-[#E8E8E8]"
+                          ? "bg-white border-white"
+                          : "bg-[#141414] border-[#27272A]"
                       }`}
                     >
                       {isResolving ? (
                         <ActivityIndicator
                           size="small"
-                          color={isFollowed ? "#FFFFFF" : "#FF6B35"}
+                          color={isFollowed ? "#000000" : "#FFFFFF"}
                           style={{ marginRight: 6 }}
                         />
                       ) : null}
                       <Text
-                        className={`font-medium text-sm ${
-                          isFollowed ? "text-white" : "text-gray-700"
+                        className={`text-xs font-semibold ${
+                          isFollowed ? "text-black" : "text-[#A1A1AA]"
                         }`}
                       >
                         {displayName}
@@ -231,11 +231,11 @@ export default function ManageInterests() {
           </ScrollView>
 
           {/* Action Container */}
-          <View className="px-6 py-4 border-t border-[#E8E8E8] bg-white">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-gray-500 text-sm">Selected</Text>
-              <Text className="text-sm font-semibold text-[#FF6B35]">
-                {selectedIds.length} of 3 required
+          <View className="px-5 py-4 border-t border-[#1A1A1A] bg-black">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-[#71717A] text-xs">Selected Topics</Text>
+              <Text className="text-xs font-bold text-white">
+                {selectedIds.length} of 3 minimum
               </Text>
             </View>
 

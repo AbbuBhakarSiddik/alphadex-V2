@@ -1,6 +1,5 @@
 import React from "react";
 import { Pressable, Text, ActivityIndicator } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -32,57 +31,57 @@ export function Button({
 
   if (isPrimary) {
     return (
-      <Animated.View style={[animStyle, { borderRadius: 16 }]} className="w-full">
-        <LinearGradient
-          colors={disabled ? ["#FFB899", "#FA9995"] : ["#FF6B35", "#F72C25"]}
-          start={{ x: 0, y: 1 }}
-          end={{ x: 1, y: 0 }}
-          style={{ borderRadius: 16 }}
+      <Animated.View style={[animStyle, { borderRadius: 9999 }]} className="w-full">
+        <Pressable
+          onPress={onPress}
+          disabled={disabled || isLoading}
+          onPressIn={() => {
+            scale.value = withSpring(0.96, { damping: 16, stiffness: 350 });
+          }}
+          onPressOut={() => {
+            scale.value = withSpring(1, { damping: 16, stiffness: 350 });
+          }}
+          className={`w-full py-3.5 px-6 rounded-full items-center justify-center bg-white ${
+            disabled || isLoading ? "opacity-50" : "active:bg-neutral-200"
+          }`}
         >
-          <Pressable
-            onPress={onPress}
-            disabled={disabled || isLoading}
-            onPressIn={() => {
-              scale.value = withSpring(0.96);
-            }}
-            onPressOut={() => {
-              scale.value = withSpring(1);
-            }}
-            className="w-full py-4 items-center justify-center"
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-white text-center font-semibold text-base">
-                {label}
-              </Text>
-            )}
-          </Pressable>
-        </LinearGradient>
+          {isLoading ? (
+            <ActivityIndicator color="#000000" size="small" />
+          ) : (
+            <Text className="text-black text-center font-bold text-sm tracking-wide">
+              {label}
+            </Text>
+          )}
+        </Pressable>
       </Animated.View>
     );
   }
 
-  // Destructive / Secondary Button
   return (
-    <Animated.View style={[animStyle, { borderRadius: 16 }]} className="w-full">
+    <Animated.View style={[animStyle, { borderRadius: 9999 }]} className="w-full">
       <Pressable
         onPress={onPress}
         disabled={disabled || isLoading}
         onPressIn={() => {
-          scale.value = withSpring(0.96);
+          scale.value = withSpring(0.96, { damping: 16, stiffness: 350 });
         }}
         onPressOut={() => {
-          scale.value = withSpring(1);
+          scale.value = withSpring(1, { damping: 16, stiffness: 350 });
         }}
-        className={`w-full py-4 rounded-2xl items-center justify-center bg-white border ${
-          isDestructive ? "border-[#F72C25] active:bg-[#FFF5F5]" : "border-[#E8E8E8] active:border-primary active:bg-[#FFF5F0]"
+        className={`w-full py-3.5 px-6 rounded-full items-center justify-center border ${
+          isDestructive
+            ? "bg-[#181111] border-[#3B1A1A] active:bg-[#251616]"
+            : "bg-[#161616] border-[#27272A] active:bg-[#222222]"
         } ${disabled || isLoading ? "opacity-50" : ""}`}
       >
         {isLoading ? (
-          <ActivityIndicator color={isDestructive ? "#F72C25" : "#FF6B35"} />
+          <ActivityIndicator color={isDestructive ? "#F87171" : "#FFFFFF"} size="small" />
         ) : (
-          <Text className={`${isDestructive ? "text-[#F72C25]" : "text-[#1A1A1A]"} text-center font-semibold text-base`}>
+          <Text
+            className={`${
+              isDestructive ? "text-red-400" : "text-[#F5F5F7]"
+            } text-center font-semibold text-sm`}
+          >
             {label}
           </Text>
         )}
@@ -90,4 +89,3 @@ export function Button({
     </Animated.View>
   );
 }
-

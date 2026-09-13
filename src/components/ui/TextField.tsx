@@ -15,19 +15,19 @@ export function TextField({ label, error, secureTextEntry, onFocus, onBlur, ...i
 
   return (
     <View className="w-full mb-4">
-      <Text className="text-sm font-medium text-[#374151] mb-1.5">{label}</Text>
+      <Text className="text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-1.5">{label}</Text>
       <View
-        className={`bg-white rounded-xl border shadow-sm shadow-gray-200/50 flex-row items-center justify-between ${
+        className={`bg-[#121212] rounded-xl border flex-row items-center justify-between ${
           error
-            ? "border-[#F72C25]"
+            ? "border-red-500"
             : isFocused
-            ? "border-primary"
-            : "border-[#E8E8E8]"
+            ? "border-white"
+            : "border-[#27272A]"
         }`}
       >
         <TextInput
-          className="text-[#1A1A1A] text-base px-4 py-3.5 flex-1 rounded-xl"
-          placeholderTextColor="#9CA3AF"
+          className="text-[#F5F5F7] text-sm px-4 py-3 flex-1 rounded-xl"
+          placeholderTextColor="#71717A"
           secureTextEntry={isSecure}
           onFocus={(e) => {
             setIsFocused(true);
@@ -42,17 +42,18 @@ export function TextField({ label, error, secureTextEntry, onFocus, onBlur, ...i
         {secureTextEntry ? (
           <Pressable
             onPress={() => setShowPassword(!showPassword)}
-            className="pr-4 py-3.5"
+            className="pr-4 py-3"
+            hitSlop={8}
           >
             {showPassword ? (
-              <EyeOff size={18} color="#9CA3AF" strokeWidth={1.5} />
+              <EyeOff size={18} color="#A1A1AA" strokeWidth={1.5} />
             ) : (
-              <Eye size={18} color="#9CA3AF" strokeWidth={1.5} />
+              <Eye size={18} color="#A1A1AA" strokeWidth={1.5} />
             )}
           </Pressable>
         ) : null}
       </View>
-      {error ? <Text className="text-[#F72C25] text-xs mt-1">{error}</Text> : null}
+      {error ? <Text className="text-red-400 text-xs mt-1">{error}</Text> : null}
     </View>
   );
 }

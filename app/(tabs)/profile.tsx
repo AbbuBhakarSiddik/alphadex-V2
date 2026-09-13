@@ -1,19 +1,47 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable, Alert, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Settings, Bell, Bookmark } from "lucide-react-native";
+import { View, Text, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  Settings,
+  Bell,
+  Bookmark,
+  SlidersHorizontal,
+  CalendarDays,
+  HardDrive,
+  ChevronRight,
+} from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../src/features/auth/hooks";
 import { useFeed } from "../../src/features/feed/hooks";
 import { getUserInterests } from "../../src/features/interests/api";
+import { useSchedule } from "../../src/features/schedule/hooks";
+import { useStorage } from "../../src/features/storage/hooks";
 import { Button } from "../../src/components/ui/Button";
 import { Chip } from "../../src/components/ui/Chip";
 import { ContentCard } from "../../src/components/layout/ContentCard";
+import { GlassCard } from "../../src/components/ui/GlassCard";
+import { AuroraBackground } from "../../src/components/ui/AuroraBackground";
+import { AnimatedPressable } from "../../src/components/animations/AnimatedPressable";
+
+const TOTAL_QUOTA_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
+
+function formatStorageSize(bytes: number): string {
+  if (bytes <= 0) return "0 GB";
+  const gb = bytes / (1024 * 1024 * 1024);
+  if (gb >= 0.05) {
+    return `${gb.toFixed(2)} GB`;
+  }
+  const mb = bytes / (1024 * 1024);
+  return `${mb.toFixed(1)} MB`;
+}
 
 export default function Profile() {
   const { profile, session, signOut } = useAuth();
   const { items, like, save } = useFeed();
+  const { upcomingThisWeekCount } = useSchedule();
+  const { totalUsedBytes } = useStorage();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [topics, setTopics] = useState<string[]>([]);
   const [isLoadingTopics, setIsLoadingTopics] = useState(true);
@@ -25,7 +53,7 @@ export default function Profile() {
         const result = await getUserInterests();
         if (isMounted) setTopics(result);
       } catch {
-        // Non-critical for this screen — just show the empty state below
+        // Non-critical
       } finally {
         if (isMounted) setIsLoadingTopics(false);
       }
@@ -35,128 +63,245 @@ export default function Profile() {
     };
   }, []);
 
-  const savedItems = items.filter((item) => item.saved).slice(0, 2);
+  const savedItems = items.filter((item) => item.saved).slice(0, 3);
   const likedItemsCount = items.filter((item) => item.liked).length;
   const savedItemsCount = items.filter((item) => item.saved).length;
 
   const initials = profile?.full_name
     ? profile.full_name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
     : session?.user?.email?.[0]?.toUpperCase() ?? "A";
 
+  const bottomPadding = (insets.bottom > 0 ? insets.bottom : 8) + 72;
+
+  const storagePercent = Math.min(
+    100,
+    Math.max(0, (totalUsedBytes / TOTAL_QUOTA_BYTES) * 100)
+  );
+
   return (
-    <SafeAreaView className="flex-1 bg-[#FAFAFA]" edges={["top"]}>
-      {/* Header icon row */}
-      <View className="h-14 flex-row justify-end items-center px-6 gap-3">
-        <Pressable
-          onPress={() => Alert.alert("Notifications", "No new notifications.")}
-          className="w-10 h-10 bg-white border border-[#E8E8E8] rounded-full items-center justify-center shadow-sm shadow-gray-200/50"
-        >
-          <Bell size={18} color="#6B7280" strokeWidth={1.5} />
-        </Pressable>
-        <Pressable
-          onPress={() => Alert.alert("Settings", "App preferences (stub).")}
-          className="w-10 h-10 bg-white border border-[#E8E8E8] rounded-full items-center justify-center shadow-sm shadow-gray-200/50"
-        >
-          <Settings size={18} color="#6B7280" strokeWidth={1.5} />
-        </Pressable>
-      </View>
-
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Profile Info */}
-        <View className="items-center px-6 mt-2 mb-6">
-          <View className="w-24 h-24 rounded-full bg-[#FFF5F0] border-2 border-[#FF6B35] items-center justify-center shadow-sm shadow-gray-200/50 mb-3">
-            <Text className="text-[#FF6B35] text-3xl font-bold">{initials}</Text>
-          </View>
-          <Text className="text-2xl font-bold text-[#1A1A1A]">
-            {profile?.full_name ?? "Sophia Nguyen"}
-          </Text>
-          <Text className="text-gray-500 text-sm mt-0.5">{session?.user?.email}</Text>
-        </View>
-
-        {/* Stats Row */}
-        <View className="flex-row mx-6 bg-white border border-[#E8E8E8] rounded-2xl p-4 shadow-sm shadow-gray-200/60 mb-6">
-          <View className="flex-1 items-center border-r border-[#F5F5F5]">
-            <Text className="text-2xl font-bold text-[#1A1A1A]">{savedItemsCount}</Text>
-            <Text className="text-xs text-gray-500 mt-0.5">Saved</Text>
-          </View>
-          <View className="flex-1 items-center border-r border-[#F5F5F5]">
-            <Text className="text-2xl font-bold text-[#1A1A1A]">{likedItemsCount}</Text>
-            <Text className="text-xs text-gray-500 mt-0.5">Liked</Text>
-          </View>
-          <View className="flex-1 items-center">
-            <Text className="text-2xl font-bold text-[#1A1A1A]">12</Text>
-            <Text className="text-xs text-gray-500 mt-0.5">Days Streak</Text>
-          </View>
-        </View>
-
-        {/* Topics List */}
-        <View className="px-6 mb-6">
-          <Text className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">
-            My Topics
-          </Text>
-          <Pressable
-            onPress={() => router.push("/manage-interests")}
-            className="bg-gray-200 items-center justify-center rounded-xl border-1 border-black px-8 py-3.5 mb-3"
-          >
-            <Text className="text-[#1A1A1A] font-semibold">Manage Interests</Text>
-          </Pressable>
-
-          {isLoadingTopics ? (
-            <ActivityIndicator color="#FF6B35" style={{ marginVertical: 8 }} />
-          ) : topics.length === 0 ? (
-            <Text className="text-gray-400 text-sm">
-              No topics yet — tap "Manage Interests" to add some.
+    <AuroraBackground>
+      <SafeAreaView className="flex-1" edges={["top"]}>
+        {/* Swiss Minimalist Header */}
+        <View className="h-13 flex-row justify-between items-center px-5 border-b border-white/10 bg-black/40 backdrop-blur-md">
+          <View className="flex-row items-center gap-2">
+            <View className="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-sm shadow-violet-400" />
+            <Text className="text-white text-base font-bold tracking-tight">Identity</Text>
+            <Text className="text-[#52525B] text-[11px] font-mono font-medium ml-1">
+              05 // CURATION
             </Text>
-          ) : (
-            <View className="flex-row flex-wrap gap-2">
-              {topics.map((topic) => (
-                <Chip key={topic} label={topic} isActive />
-              ))}
+          </View>
+
+          <View className="flex-row items-center gap-2">
+            <AnimatedPressable
+              onPress={() => Alert.alert("Notifications", "No new notifications.")}
+              className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center"
+              hitSlop={8}
+            >
+              <Bell size={15} color="#A1A1AA" strokeWidth={1.8} />
+            </AnimatedPressable>
+            <AnimatedPressable
+              onPress={() => Alert.alert("Settings", "App preferences (stub).")}
+              className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center"
+              hitSlop={8}
+            >
+              <Settings size={15} color="#A1A1AA" strokeWidth={1.8} />
+            </AnimatedPressable>
+          </View>
+        </View>
+
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: bottomPadding }}
+        >
+          {/* Profile Card */}
+          <View className="items-center px-6 mt-5 mb-5">
+            <View className="w-20 h-20 rounded-full bg-[#181822] border-2 border-white/25 items-center justify-center mb-3 shadow-lg shadow-violet-500/20">
+              <Text className="text-white text-2xl font-black">{initials}</Text>
             </View>
-          )}
-        </View>
-
-        {/* Saved Content Section */}
-        <View className="px-6 mb-8">
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-sm font-bold text-gray-500 uppercase tracking-widest">
-              Saved Content
+            <Text className="text-xl font-bold text-white tracking-tight">
+              {profile?.full_name ?? "Alphadex Learner"}
             </Text>
-            {savedItemsCount > 2 && (
-              <Pressable onPress={() => Alert.alert("Saved Items", `Showing ${savedItemsCount} saved items.`)}>
-                <Text className="text-xs font-semibold text-[#FF6B35]">View All ({savedItemsCount})</Text>
-              </Pressable>
+            <Text className="text-[#71717A] text-xs font-mono mt-0.5">
+              {session?.user?.email}
+            </Text>
+          </View>
+
+          {/* Frosted Glass Stats Row */}
+          <View className="mx-4 mb-6">
+            <GlassCard className="p-4">
+              <View className="flex-row items-center">
+                <View className="flex-1 items-center border-r border-white/10">
+                  <Text className="text-xl font-black text-white">{savedItemsCount}</Text>
+                  <Text className="text-[10px] font-mono text-[#71717A] uppercase tracking-wider mt-0.5">
+                    Saved
+                  </Text>
+                </View>
+                <View className="flex-1 items-center border-r border-white/10">
+                  <Text className="text-xl font-black text-white">{likedItemsCount}</Text>
+                  <Text className="text-[10px] font-mono text-[#71717A] uppercase tracking-wider mt-0.5">
+                    Liked
+                  </Text>
+                </View>
+                <View className="flex-1 items-center">
+                  <Text className="text-xl font-black text-white">14</Text>
+                  <Text className="text-[10px] font-mono text-[#71717A] uppercase tracking-wider mt-0.5">
+                    Day Streak
+                  </Text>
+                </View>
+              </View>
+            </GlassCard>
+          </View>
+
+          {/* Learner Hub Section */}
+          <View className="px-4 mb-6">
+            <Text className="text-[11px] font-mono font-bold text-[#71717A] uppercase tracking-wider mb-3">
+              LEARNER HUB
+            </Text>
+
+            <View className="gap-3">
+              {/* Card 1: Study Topics / Interests */}
+              <AnimatedPressable
+                onPress={() => router.push("/manage-interests")}
+                className="bg-[#0D0D11] border border-white/10 rounded-2xl p-4 active:border-white/20"
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center flex-1 mr-2">
+                    <View className="w-10 h-10 rounded-xl bg-[#FF6B35]/15 border border-[#FF6B35]/30 items-center justify-center mr-3">
+                      <SlidersHorizontal size={18} color="#FF6B35" strokeWidth={2} />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-sm font-bold text-white tracking-tight">
+                        Curated Topics
+                      </Text>
+                      <Text className="text-xs text-[#A1A1AA] mt-0.5">
+                        {isLoadingTopics
+                          ? "Loading topics..."
+                          : `${topics.length} topic${topics.length === 1 ? "" : "s"} configured`}
+                      </Text>
+                    </View>
+                  </View>
+                  <ChevronRight size={18} color="#71717A" />
+                </View>
+
+                {topics.length > 0 && (
+                  <View className="flex-row flex-wrap gap-1.5 mt-3 pt-3 border-t border-white/5">
+                    {topics.slice(0, 4).map((topic) => (
+                      <View
+                        key={topic}
+                        className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10"
+                      >
+                        <Text className="text-[11px] font-medium text-white/90">
+                          {topic}
+                        </Text>
+                      </View>
+                    ))}
+                    {topics.length > 4 && (
+                      <View className="px-2 py-0.5 rounded-full bg-white/5">
+                        <Text className="text-[11px] font-mono text-[#71717A]">
+                          +{topics.length - 4} more
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </AnimatedPressable>
+
+              {/* Card 2: Study Schedule */}
+              <AnimatedPressable
+                onPress={() => router.push("/study-schedule")}
+                className="bg-[#0D0D11] border border-white/10 rounded-2xl p-4 active:border-white/20"
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center flex-1 mr-2">
+                    <View className="w-10 h-10 rounded-xl bg-[#FF6B35]/15 border border-[#FF6B35]/30 items-center justify-center mr-3">
+                      <CalendarDays size={18} color="#FF6B35" strokeWidth={2} />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-sm font-bold text-white tracking-tight">
+                        Study Schedule
+                      </Text>
+                      <Text className="text-xs text-[#A1A1AA] mt-0.5">
+                        {upcomingThisWeekCount > 0
+                          ? `${upcomingThisWeekCount} session${upcomingThisWeekCount === 1 ? "" : "s"} planned this week`
+                          : "No sessions planned this week"}
+                      </Text>
+                    </View>
+                  </View>
+                  <ChevronRight size={18} color="#71717A" />
+                </View>
+              </AnimatedPressable>
+
+              {/* Card 3: Cloud Storage */}
+              <AnimatedPressable
+                onPress={() => router.push("/my-storage")}
+                className="bg-[#0D0D11] border border-white/10 rounded-2xl p-4 active:border-white/20"
+              >
+                <View className="flex-row items-center justify-between mb-2">
+                  <View className="flex-row items-center flex-1 mr-2">
+                    <View className="w-10 h-10 rounded-xl bg-[#FF6B35]/15 border border-[#FF6B35]/30 items-center justify-center mr-3">
+                      <HardDrive size={18} color="#FF6B35" strokeWidth={2} />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-sm font-bold text-white tracking-tight">
+                        Cloud Storage
+                      </Text>
+                      <Text className="text-xs font-mono text-[#A1A1AA] mt-0.5">
+                        {formatStorageSize(totalUsedBytes)} of 5.0 GB used
+                      </Text>
+                    </View>
+                  </View>
+                  <ChevronRight size={18} color="#71717A" />
+                </View>
+
+                {/* Mini Storage Usage Bar */}
+                <View className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mt-1">
+                  <View
+                    className="h-full rounded-full bg-[#FF6B35]"
+                    style={{ width: `${Math.max(storagePercent, 2)}%` }}
+                  />
+                </View>
+              </AnimatedPressable>
+            </View>
+          </View>
+
+          {/* Saved Content Section */}
+          <View className="px-4 mb-6">
+            <View className="flex-row justify-between items-center mb-3">
+              <Text className="text-[11px] font-mono font-bold text-[#71717A] uppercase tracking-wider">
+                SAVED ARCHIVE ({savedItemsCount})
+              </Text>
+            </View>
+
+            {savedItems.length === 0 ? (
+              <View className="bg-[#0A0A0E] border border-white/10 rounded-2xl p-5 items-center justify-center">
+                <Bookmark size={22} color="#383844" strokeWidth={1.5} className="mb-2" />
+                <Text className="text-[#71717A] text-xs">No saved content in archive.</Text>
+              </View>
+            ) : (
+              <View>
+                {savedItems.map((item, idx) => (
+                  <ContentCard
+                    key={item.id}
+                    item={item}
+                    index={idx}
+                    onLike={() => like(item.id, item.liked)}
+                    onSave={() => save(item.id, item.saved)}
+                  />
+                ))}
+              </View>
             )}
           </View>
 
-          {savedItems.length === 0 ? (
-            <View className="bg-white border border-[#E8E8E8] rounded-2xl p-6 items-center justify-center shadow-sm">
-              <Bookmark size={24} color="#D1D1D1" strokeWidth={1.5} className="mb-2" />
-              <Text className="text-gray-500 text-sm">No saved content yet.</Text>
-            </View>
-          ) : (
-            <View>
-              {savedItems.map((item) => (
-                <ContentCard
-                  key={item.id}
-                  item={item}
-                  onLike={() => like(item.id, item.liked)}
-                  onSave={() => save(item.id, item.saved)}
-                />
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Sign Out Action */}
-        <View className="px-6">
-          <Button label="Sign Out" onPress={signOut} variant="destructive" />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          {/* Sign Out Action */}
+          <View className="px-4">
+            <Button label="Sign Out" onPress={signOut} variant="destructive" />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </AuroraBackground>
   );
 }

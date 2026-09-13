@@ -1,4 +1,4 @@
-import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
 import { Pressable, Text, ActivityIndicator } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -18,28 +18,30 @@ export function GradientButton({ label, onPress, isLoading, disabled }: Props) {
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
+
   return (
-    <Animated.View style={[animStyle, { borderRadius: 16 }]} className="w-full">
-      <LinearGradient
-        colors={disabled ? ["#FFB899", "#FA9995"] : ["#FF6B35", "#F72C25"]}
-        start={{ x: 0, y: 1 }}
-        end={{ x: 1, y: 0 }}
-        style={{ borderRadius: 16 }}
+    <Animated.View style={[animStyle, { borderRadius: 9999 }]} className="w-full">
+      <Pressable
+        onPress={onPress}
+        disabled={disabled || isLoading}
+        onPressIn={() => {
+          scale.value = withSpring(0.96, { damping: 16, stiffness: 350 });
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, { damping: 16, stiffness: 350 });
+        }}
+        className={`w-full py-3.5 px-6 rounded-full items-center justify-center bg-white ${
+          disabled || isLoading ? "opacity-50" : "active:bg-neutral-200"
+        }`}
       >
-        <Pressable
-          onPress={onPress}
-          disabled={disabled || isLoading}
-          onPressIn={() => { scale.value = withSpring(0.96); }}
-          onPressOut={() => { scale.value = withSpring(1); }}
-          className="py-4 items-center justify-center w-full"
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-white font-semibold text-base">{label}</Text>
-          )}
-        </Pressable>
-      </LinearGradient>
+        {isLoading ? (
+          <ActivityIndicator color="#000000" size="small" />
+        ) : (
+          <Text className="text-black text-center font-bold text-sm tracking-wide">
+            {label}
+          </Text>
+        )}
+      </Pressable>
     </Animated.View>
   );
 }

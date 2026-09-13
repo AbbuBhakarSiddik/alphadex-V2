@@ -3,12 +3,11 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
 import {
   SendHorizontal,
@@ -19,9 +18,10 @@ import {
   RotateCw,
   X,
 } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useTutorChat } from "../../src/features/assistant/hooks";
 import type { TutorMessage } from "../../src/features/assistant/types";
+import { AuroraBackground } from "../../src/components/ui/AuroraBackground";
+import { AnimatedPressable } from "../../src/components/animations/AnimatedPressable";
 
 const SUGGESTED_PROMPTS = [
   "Summarize today's feed 📰",
@@ -41,6 +41,7 @@ function formatTime(isoString?: string): string {
 }
 
 export default function AssistantScreen() {
+  const insets = useSafeAreaInsets();
   const {
     messages,
     isLoading,
@@ -74,28 +75,28 @@ export default function AssistantScreen() {
         }`}
       >
         {!isUser && (
-          <View className="w-8 h-8 rounded-full bg-[#FFF5F0] border border-[#FF6B35]/20 items-center justify-center mb-1">
-            <Bot size={18} color="#FF6B35" strokeWidth={1.5} />
+          <View className="w-7 h-7 rounded-full bg-[#181824] border border-white/20 items-center justify-center mb-1">
+            <Bot size={14} color="#FFFFFF" strokeWidth={1.8} />
           </View>
         )}
 
-        <View className={`max-w-[78%] ${isUser ? "items-end" : "items-start"}`}>
+        <View className={`max-w-[80%] ${isUser ? "items-end" : "items-start"}`}>
           {!isUser && (
-            <Text className="text-[11px] font-medium text-gray-500 mb-1 ml-1">
-              Alphadex Tutor
+            <Text className="text-[10px] font-mono font-medium text-[#71717A] mb-1 ml-1 uppercase tracking-wider">
+              ALPHADEX // AI TUTOR
             </Text>
           )}
 
           <View
             className={`px-4 py-3 rounded-2xl ${
               isUser
-                ? "bg-[#FF6B35] rounded-br-xs shadow-sm shadow-[#FF6B35]/30"
-                : "bg-white rounded-bl-xs border border-[#E8E8E8] shadow-sm shadow-gray-200/50"
+                ? "bg-white rounded-br-xs shadow-md shadow-white/10"
+                : "bg-[#0E0E14]/90 rounded-bl-xs border border-white/10"
             }`}
           >
             <Text
               className={`text-sm leading-5 ${
-                isUser ? "text-white font-normal" : "text-[#1A1A1A] font-normal"
+                isUser ? "text-black font-medium" : "text-[#F5F5F7] font-normal"
               }`}
             >
               {item.content}
@@ -103,7 +104,7 @@ export default function AssistantScreen() {
           </View>
 
           <Text
-            className={`text-[10px] text-gray-400 mt-1 ${
+            className={`text-[10px] text-[#52525B] mt-1 font-mono ${
               isUser ? "mr-1 text-right" : "ml-1 text-left"
             }`}
           >
@@ -119,17 +120,17 @@ export default function AssistantScreen() {
 
     return (
       <View className="mb-4 flex-row items-end gap-2 px-4 justify-start">
-        <View className="w-8 h-8 rounded-full bg-[#FFF5F0] border border-[#FF6B35]/20 items-center justify-center mb-1">
-          <Bot size={18} color="#FF6B35" strokeWidth={1.5} />
+        <View className="w-7 h-7 rounded-full bg-[#181824] border border-white/20 items-center justify-center mb-1">
+          <Bot size={14} color="#FFFFFF" strokeWidth={1.8} />
         </View>
-        <View className="max-w-[78%] items-start">
-          <Text className="text-[11px] font-medium text-gray-500 mb-1 ml-1">
-            Alphadex Tutor
+        <View className="max-w-[80%] items-start">
+          <Text className="text-[10px] font-mono font-medium text-[#71717A] mb-1 ml-1 uppercase tracking-wider">
+            ALPHADEX // AI TUTOR
           </Text>
-          <View className="px-4 py-3 bg-white rounded-2xl rounded-bl-xs border border-[#E8E8E8] shadow-sm shadow-gray-200/50 flex-row gap-1.5 items-center">
-            <ActivityIndicator size="small" color="#FF6B35" />
-            <Text className="text-xs text-gray-500 font-medium ml-1.5">
-              Thinking...
+          <View className="px-4 py-2.5 bg-[#0E0E14]/90 rounded-2xl rounded-bl-xs border border-white/10 flex-row gap-2 items-center">
+            <ActivityIndicator size="small" color="#FFFFFF" />
+            <Text className="text-xs text-[#A1A1AA] font-mono">
+              Computing response...
             </Text>
           </View>
         </View>
@@ -137,159 +138,168 @@ export default function AssistantScreen() {
     );
   }, [isSending]);
 
+  const composerBottomPadding = (insets.bottom > 0 ? insets.bottom : 8) + 54;
+
   return (
-    <SafeAreaView className="flex-1 bg-[#FAFAFA]" edges={["top"]}>
-      {/* Header */}
-      <View className="h-14 bg-white border-b border-[#E8E8E8] px-6 flex-row items-center justify-between shadow-sm shadow-gray-100/50">
-        <View className="flex-row items-center gap-2.5">
-          <View className="w-8 h-8 rounded-full bg-[#FFF5F0] items-center justify-center">
-            <Bot size={18} color="#FF6B35" strokeWidth={1.5} />
-          </View>
-          <View>
-            <Text className="text-sm font-bold text-[#1A1A1A]">AI Study Guide</Text>
-            <View className="flex-row items-center gap-1.5">
-              <View className="w-2 h-2 rounded-full bg-[#10B981]" />
-              <Text className="text-[10px] text-[#10B981] font-semibold">
-                Online · Context-Aware
-              </Text>
+    <AuroraBackground>
+      <SafeAreaView className="flex-1" edges={["top"]}>
+        {/* Swiss Minimalist Header */}
+        <View className="h-14 border-b border-white/10 px-5 flex-row items-center justify-between bg-black/40 backdrop-blur-md">
+          <View className="flex-row items-center gap-2.5">
+            <View className="w-7 h-7 rounded-full bg-white/10 border border-white/20 items-center justify-center">
+              <Sparkles size={14} color="#FFFFFF" strokeWidth={2} />
+            </View>
+            <View>
+              <View className="flex-row items-center gap-1.5">
+                <Text className="text-sm font-bold text-white tracking-wide">
+                  AI Study Guide
+                </Text>
+                <Text className="text-[10px] font-mono text-[#52525B]">02</Text>
+              </View>
+              <View className="flex-row items-center gap-1.5">
+                <View className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400" />
+                <Text className="text-[10px] text-emerald-400 font-mono font-semibold uppercase tracking-wider">
+                  Live · Context-Aware
+                </Text>
+              </View>
             </View>
           </View>
+
+          <AnimatedPressable
+            onPress={refresh}
+            className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center active:bg-white/15"
+            hitSlop={8}
+          >
+            <RefreshCw size={14} color="#A1A1AA" strokeWidth={1.8} />
+          </AnimatedPressable>
         </View>
 
-        <Pressable
-          onPress={refresh}
-          className="w-9 h-9 rounded-full bg-[#F5F5F5] items-center justify-center border border-[#E8E8E8] active:bg-gray-200"
-          hitSlop={8}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          className="flex-1"
         >
-          <RefreshCw size={16} color="#6B7280" strokeWidth={1.5} />
-        </Pressable>
-      </View>
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
-        {/* Main Content Area */}
-        {isLoading && messages.length === 0 ? (
-          <View className="flex-1 items-center justify-center">
-            <ActivityIndicator size="large" color="#FF6B35" />
-            <Text className="text-gray-500 text-sm mt-3">
-              Loading chat history...
-            </Text>
-          </View>
-        ) : messages.length === 0 ? (
-          <View className="flex-1 items-center justify-center px-6">
-            <View className="w-16 h-16 rounded-full bg-[#FFF5F0] border border-[#FF6B35]/20 items-center justify-center mb-4">
-              <Sparkles size={32} color="#FF6B35" strokeWidth={1.5} />
-            </View>
-            <Text className="text-lg font-bold text-[#1A1A1A] text-center">
-              Ask me anything about what you're learning
-            </Text>
-            <Text className="text-xs text-gray-500 text-center mt-1.5 max-w-[300px]">
-              I know your favorite topics and recent activity. Ask questions, request summaries, or take quizzes.
-            </Text>
-
-            {/* Quick Prompt Starters */}
-            <View className="mt-6 w-full max-w-[340px] gap-2">
-              {SUGGESTED_PROMPTS.map((prompt, i) => (
-                <Pressable
-                  key={i}
-                  onPress={() => handleSend(prompt)}
-                  className="bg-white border border-[#E8E8E8] rounded-xl px-4 py-2.5 flex-row items-center justify-between active:bg-[#FFF5F0] active:border-[#FF6B35]/30 shadow-xs"
-                >
-                  <Text className="text-xs font-semibold text-[#1A1A1A]">
-                    {prompt}
-                  </Text>
-                  <SendHorizontal size={14} color="#FF6B35" strokeWidth={1.5} />
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        ) : (
-          <View className="flex-1 pt-3">
-            <FlashList
-              data={messages}
-              renderItem={renderItem}
-              keyExtractor={(item) => item.id}
-              maintainVisibleContentPosition={{
-                startRenderingFromBottom: true,
-                autoscrollToBottomThreshold: 0.1,
-              }}
-              ListFooterComponent={renderListFooter}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 16 }}
-            />
-          </View>
-        )}
-
-        {/* Error / Rejection Banner with Retry */}
-        {error && (
-          <View className="mx-4 mb-2 p-3 bg-red-50 border border-red-200 rounded-xl flex-row items-center justify-between shadow-xs">
-            <View className="flex-row items-center gap-2 flex-1 mr-2">
-              <AlertCircle size={16} color="#DC2626" strokeWidth={1.5} />
-              <Text className="text-xs text-red-700 flex-1" numberOfLines={2}>
-                {error}
+          {/* Main Content Area */}
+          {isLoading && messages.length === 0 ? (
+            <View className="flex-1 items-center justify-center">
+              <ActivityIndicator size="large" color="#FFFFFF" />
+              <Text className="text-[#71717A] text-xs font-mono mt-3">
+                Connecting to tutor engine...
               </Text>
             </View>
-            <View className="flex-row items-center gap-1.5">
-              <Pressable
-                onPress={retry}
-                disabled={isSending}
-                className="bg-white border border-red-200 px-2.5 py-1 rounded-md flex-row items-center gap-1 active:bg-red-50"
-              >
-                <RotateCw size={12} color="#DC2626" />
-                <Text className="text-[11px] font-semibold text-red-700">
-                  Retry
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={clearError}
-                className="p-1 rounded-md active:bg-red-100"
-                hitSlop={8}
-              >
-                <X size={14} color="#6B7280" />
-              </Pressable>
+          ) : messages.length === 0 ? (
+            <View className="flex-1 items-center justify-center px-6">
+              <View className="w-14 h-14 rounded-2xl bg-[#0E0E14]/80 border border-white/15 items-center justify-center mb-4 shadow-lg">
+                <Sparkles size={24} color="#FFFFFF" strokeWidth={1.8} />
+              </View>
+              <Text className="text-base font-bold text-white text-center tracking-tight">
+                Ask anything about your study stream
+              </Text>
+              <Text className="text-xs text-[#71717A] text-center mt-1.5 max-w-[280px] leading-relaxed">
+                Trained on technical transcripts and your curated interests.
+              </Text>
+
+              {/* Swiss Quick Prompt Starters */}
+              <View className="mt-6 w-full max-w-[340px] gap-2">
+                {SUGGESTED_PROMPTS.map((prompt, i) => (
+                  <AnimatedPressable
+                    key={i}
+                    onPress={() => handleSend(prompt)}
+                    className="bg-[#0E0E14]/80 border border-white/10 rounded-xl px-4 py-2.5 flex-row items-center justify-between active:bg-white/10"
+                  >
+                    <Text className="text-xs font-medium text-[#E4E4E7]">
+                      {prompt}
+                    </Text>
+                    <SendHorizontal size={13} color="#FFFFFF" strokeWidth={1.8} />
+                  </AnimatedPressable>
+                ))}
+              </View>
             </View>
-          </View>
-        )}
+          ) : (
+            <View className="flex-1 pt-3">
+              <FlashList
+                data={messages}
+                renderItem={renderItem}
+                keyExtractor={(item) => item.id}
+                maintainVisibleContentPosition={{
+                  startRenderingFromBottom: true,
+                  autoscrollToBottomThreshold: 0.1,
+                }}
+                ListFooterComponent={renderListFooter}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 16 }}
+              />
+            </View>
+          )}
 
-        {/* Input Composer */}
-        <View className="bg-white border-t border-[#E8E8E8] px-4 py-3 flex-row items-center gap-2.5">
-          <TextInput
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Ask me anything about what you're learning..."
-            placeholderTextColor="#9CA3AF"
-            returnKeyType="send"
-            onSubmitEditing={() => handleSend()}
-            editable={!isSending}
-            className="flex-1 bg-[#F5F5F5] rounded-full px-4 py-2.5 text-sm text-[#1A1A1A] border border-[#E8E8E8]"
-          />
+          {/* Error Banner with Retry */}
+          {error && (
+            <View className="mx-4 mb-2 p-3 bg-[#1F1212]/90 border border-red-500/30 rounded-xl flex-row items-center justify-between">
+              <View className="flex-row items-center gap-2 flex-1 mr-2">
+                <AlertCircle size={15} color="#F87171" strokeWidth={1.8} />
+                <Text className="text-xs text-red-300 flex-1" numberOfLines={2}>
+                  {error}
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-1.5">
+                <AnimatedPressable
+                  onPress={retry}
+                  disabled={isSending}
+                  className="bg-[#2B1717] border border-red-500/30 px-2.5 py-1 rounded-md flex-row items-center gap-1"
+                >
+                  <RotateCw size={11} color="#F87171" />
+                  <Text className="text-[11px] font-semibold text-red-300">
+                    Retry
+                  </Text>
+                </AnimatedPressable>
+                <AnimatedPressable
+                  onPress={clearError}
+                  className="p-1 rounded-md active:bg-white/10"
+                  hitSlop={8}
+                >
+                  <X size={14} color="#71717A" />
+                </AnimatedPressable>
+              </View>
+            </View>
+          )}
 
-          <LinearGradient
-            colors={
-              inputText.trim() && !isSending
-                ? ["#FF6B35", "#F72C25"]
-                : ["#D1D5DB", "#9CA3AF"]
-            }
-            start={{ x: 0, y: 1 }}
-            end={{ x: 1, y: 0 }}
-            style={{ borderRadius: 9999 }}
+          {/* Glassmorphic Input Composer */}
+          <View
+            style={{ paddingBottom: composerBottomPadding }}
+            className="border-t border-white/10 bg-black/60 backdrop-blur-md px-4 pt-3 flex-row items-center gap-2.5"
           >
-            <Pressable
+            <TextInput
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Ask anything or request a summary..."
+              placeholderTextColor="#71717A"
+              returnKeyType="send"
+              onSubmitEditing={() => handleSend()}
+              editable={!isSending}
+              className="flex-1 bg-[#12121A] rounded-full px-4 py-2.5 text-sm text-[#F5F5F7] border border-white/15"
+            />
+
+            <AnimatedPressable
               onPress={() => handleSend()}
               disabled={!inputText.trim() || isSending}
-              className="w-10 h-10 items-center justify-center"
+              className={`w-9 h-9 rounded-full items-center justify-center ${
+                inputText.trim() && !isSending
+                  ? "bg-white shadow-md shadow-white/20"
+                  : "bg-[#181820] opacity-50"
+              }`}
             >
               {isSending ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color="#000000" />
               ) : (
-                <SendHorizontal size={18} color="#FFFFFF" strokeWidth={1.5} />
+                <SendHorizontal
+                  size={16}
+                  color={inputText.trim() ? "#000000" : "#71717A"}
+                  strokeWidth={2}
+                />
               )}
-            </Pressable>
-          </LinearGradient>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            </AnimatedPressable>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </AuroraBackground>
   );
 }

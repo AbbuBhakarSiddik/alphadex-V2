@@ -5,20 +5,35 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // ── Legacy dark-theme tokens (keep for backward compat, but updated for Alphadex) ──
-        primary: {
-          DEFAULT: "#FF6B35",   // orange brand
-          light:   "#FF8F5E",   // lighter orange
-          dark:    "#E55A24",   // darker orange
+        // ── Alphadex Minimalist Black & Off-White Design Tokens ──
+        dark: {
+          bg:        "#000000",   // pure black canvas
+          surface1:  "#0F0F0F",   // card / container level 1
+          surface2:  "#1A1A1A",   // elevated / pill level 2
+          surface3:  "#262626",   // active / hover level 3
+          border:    "#222222",   // subtle hairline border
+          borderLight: "rgba(255, 255, 255, 0.08)",
         },
-        surface: "#FFFFFF",     // white surface
-        muted:   "#6B7280",     // gray-500 equivalent
+        offwhite: {
+          DEFAULT:   "#F5F5F7",   // primary high-contrast text
+          pure:      "#FFFFFF",   // pure white active accents
+          muted:     "#A1A1AA",   // secondary metadata text
+          subtle:    "#71717A",   // tertiary subtle icons/text
+        },
 
-        // ── New light-theme semantic tokens ──
-        bg:           "#FAFAFA",   // app background
-        ink:          "#1A1A1A",   // primary text
+        // ── Brand & Semantic Tokens ──
+        primary: {
+          DEFAULT: "#FFFFFF",   // off-white high contrast
+          light:   "#F5F5F7",
+          dark:    "#E5E5E5",
+          orange:  "#FF6B35",   // legacy alias
+        },
+        surface: "#0F0F0F",     // dark surface
+        muted:   "#A1A1AA",     // secondary gray
 
-        // ── Brand gradient endpoints (use with expo-linear-gradient) ──
+        bg:      "#000000",     // app background
+        ink:     "#F5F5F7",     // primary text
+
         brand: {
           orange: "#FF6B35",
           red:    "#F72C25",
