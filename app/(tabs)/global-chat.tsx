@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -24,6 +23,7 @@ import {
   RefreshCw,
 } from "lucide-react-native";
 import { AuroraBackground } from "../../src/components/ui/AuroraBackground";
+import { AnimatedPressable } from "../../src/components/animations/AnimatedPressable";
 import { useAuth } from "../../src/features/auth/hooks";
 import { useChat } from "../../src/features/chat/hooks";
 import { getSignedAttachmentUrl } from "../../src/features/chat/api";
@@ -83,8 +83,8 @@ function AttachmentView({
 
   if (attachmentType === "image") {
     return (
-      <Pressable
-        onPress={handleOpenAttachment}
+      <AnimatedPressable
+        onPress={() => handleOpenAttachment()}
         className="mt-2 rounded-xl overflow-hidden bg-black/5"
       >
         {signedUrl ? (
@@ -105,14 +105,14 @@ function AttachmentView({
             )}
           </View>
         )}
-      </Pressable>
+      </AnimatedPressable>
     );
   }
 
   if (attachmentType === "pdf") {
     return (
-      <Pressable
-        onPress={handleOpenAttachment}
+      <AnimatedPressable
+        onPress={() => handleOpenAttachment()}
         className={`mt-2 flex-row items-center gap-3 p-3 rounded-xl border ${
           isMe
             ? "bg-neutral-100 border-neutral-300"
@@ -142,7 +142,7 @@ function AttachmentView({
           color={isMe ? "#000000" : "#A1A1AA"}
           strokeWidth={1.8}
         />
-      </Pressable>
+      </AnimatedPressable>
     );
   }
 
@@ -241,36 +241,48 @@ export default function GlobalChat() {
   const handleSend = async () => {
     if (isSending) return;
 
-    if (selectedFile) {
-      const fileToSend = selectedFile;
-      const textCaption = inputText.trim();
-
-      // Clear composer state right away
-      setSelectedFile(null);
-      setInputText("");
-
-      const res = await sendAttachment(
-        fileToSend.uri,
-        fileToSend.mimeType,
-        fileToSend.extension,
-        fileToSend.type,
-        textCaption || undefined
+    if (!currentUserId) {
+      Alert.alert(
+        "Sign In Required",
+        "Please sign in to your account to send messages in Global Chat."
       );
-
-      if (!res.success) {
-        Alert.alert("Couldn't send", res.reason || "Content moderation rejected this upload");
-      }
       return;
     }
 
-    const textToSend = inputText.trim();
-    if (!textToSend) return;
+    try {
+      if (selectedFile) {
+        const fileToSend = selectedFile;
+        const textCaption = inputText.trim();
 
-    setInputText("");
-    const res = await sendText(textToSend);
+        // Clear composer state right away
+        setSelectedFile(null);
+        setInputText("");
 
-    if (!res.success) {
-      Alert.alert("Couldn't send", res.reason || "Content moderation rejected this message");
+        const res = await sendAttachment(
+          fileToSend.uri,
+          fileToSend.mimeType,
+          fileToSend.extension,
+          fileToSend.type,
+          textCaption || undefined
+        );
+
+        if (!res.success) {
+          Alert.alert("Couldn't send", res.reason || "Content moderation rejected this upload");
+        }
+        return;
+      }
+
+      const textToSend = inputText.trim();
+      if (!textToSend) return;
+
+      setInputText("");
+      const res = await sendText(textToSend);
+
+      if (!res.success) {
+        Alert.alert("Couldn't send", res.reason || "Content moderation rejected this message");
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err?.message || "An unexpected error occurred while sending");
     }
   };
 
@@ -375,12 +387,12 @@ export default function GlobalChat() {
             </View>
           </View>
 
-          <Pressable
-            onPress={refresh}
+          <AnimatedPressable
+            onPress={() => refresh()}
             className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center active:bg-white/15"
           >
             <RefreshCw size={14} color="#A1A1AA" strokeWidth={1.8} />
-          </Pressable>
+          </AnimatedPressable>
         </View>
 
         <KeyboardAvoidingView
@@ -434,12 +446,12 @@ export default function GlobalChat() {
                   {selectedFile.name}
                 </Text>
               </View>
-              <Pressable
+              <AnimatedPressable
                 onPress={() => setSelectedFile(null)}
                 className="px-2 py-1 bg-white/10 rounded-md"
               >
                 <Text className="text-xs text-[#A1A1AA] font-medium">Remove</Text>
-              </Pressable>
+              </AnimatedPressable>
             </View>
           )}
 
@@ -449,22 +461,22 @@ export default function GlobalChat() {
             className="border-t border-white/10 bg-black/60 backdrop-blur-md px-4 pt-3 flex-row items-center gap-2"
           >
             {/* Image Picker Button */}
-            <Pressable
-              onPress={handlePickImage}
+            <AnimatedPressable
+              onPress={() => handlePickImage()}
               disabled={isSending}
               className="w-9 h-9 rounded-full bg-[#14141A] items-center justify-center border border-white/15 active:bg-white/15"
             >
               <ImageIcon size={16} color="#A1A1AA" strokeWidth={1.8} />
-            </Pressable>
+            </AnimatedPressable>
 
             {/* PDF Document Picker Button */}
-            <Pressable
-              onPress={handlePickDocument}
+            <AnimatedPressable
+              onPress={() => handlePickDocument()}
               disabled={isSending}
               className="w-9 h-9 rounded-full bg-[#14141A] items-center justify-center border border-white/15 active:bg-white/15"
             >
               <FileText size={16} color="#A1A1AA" strokeWidth={1.8} />
-            </Pressable>
+            </AnimatedPressable>
 
             {/* Text Input */}
             <TextInput
@@ -476,13 +488,13 @@ export default function GlobalChat() {
               placeholderTextColor="#71717A"
               className="flex-1 bg-[#12121A] rounded-full px-4 py-2.5 text-sm text-[#F5F5F7] border border-white/15"
               editable={!isSending}
-              onSubmitEditing={handleSend}
+              onSubmitEditing={() => handleSend()}
               returnKeyType="send"
             />
 
             {/* Send Button */}
-            <Pressable
-              onPress={handleSend}
+            <AnimatedPressable
+              onPress={() => handleSend()}
               disabled={isSending || (!inputText.trim() && !selectedFile)}
               className={`w-9 h-9 rounded-full items-center justify-center ${
                 (inputText.trim() || selectedFile) && !isSending
@@ -499,7 +511,7 @@ export default function GlobalChat() {
                   strokeWidth={2}
                 />
               )}
-            </Pressable>
+            </AnimatedPressable>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

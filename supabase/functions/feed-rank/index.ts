@@ -63,6 +63,43 @@ function scoreItem(
   return Math.round(score * 100) / 100;
 }
 
+function parseIsoDurationToSeconds(iso: string): number {
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+  const hours = parseInt(match[1] || "0", 10);
+  const minutes = parseInt(match[2] || "0", 10);
+  const seconds = parseInt(match[3] || "0", 10);
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+async function filterShorts(apiKey: string, rows: any[]): Promise<any[]> {
+  if (rows.length === 0) return [];
+  const videoIds = rows.map((r) => r.external_id).filter(Boolean);
+  if (videoIds.length === 0) return [];
+
+  const validIds = new Set<string>();
+  for (let i = 0; i < videoIds.length; i += 50) {
+    const batch = videoIds.slice(i, i + 50);
+    const videosUrl = `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&id=${batch.join(
+      ","
+    )}&part=contentDetails`;
+    const res = await fetch(videosUrl);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch video details: ${res.statusText}`);
+    }
+    const data = await res.json();
+    for (const item of data.items ?? []) {
+      const durationIso = item.contentDetails?.duration ?? "";
+      const seconds = parseIsoDurationToSeconds(durationIso);
+      if (seconds > 60) {
+        validIds.add(item.id);
+      }
+    }
+  }
+
+  return rows.filter((r) => validIds.has(r.external_id));
+}
+
 async function ingestYouTube(
   service: ReturnType<typeof createClient>,
   channelIds: string[]
@@ -91,9 +128,17 @@ async function ingestYouTube(
         .filter((r: any) => r.external_id && r.title);
 
       if (rows.length > 0) {
-        await service
-          .from("content_items")
-          .upsert(rows, { onConflict: "source,external_id" });
+        try {
+          const nonShortRows = await filterShorts(apiKey, rows);
+          if (nonShortRows.length > 0) {
+            await service
+              .from("content_items")
+              .upsert(nonShortRows, { onConflict: "source,external_id" });
+          }
+        } catch (_err) {
+          // If duration fetch fails, skip this batch to avoid letting unfiltered Shorts through
+          continue;
+        }
       }
     } catch (_err) {
       // Best-effort ingestion — one failed channel shouldn't break the feed
@@ -133,9 +178,17 @@ async function ingestYouTubeByTopic(
         .filter((r: any) => r.external_id && r.title);
 
       if (rows.length > 0) {
-        await service
-          .from("content_items")
-          .upsert(rows, { onConflict: "source,external_id" });
+        try {
+          const nonShortRows = await filterShorts(apiKey, rows);
+          if (nonShortRows.length > 0) {
+            await service
+              .from("content_items")
+              .upsert(nonShortRows, { onConflict: "source,external_id" });
+          }
+        } catch (_err) {
+          // If duration fetch fails, skip this batch to avoid letting unfiltered Shorts through
+          continue;
+        }
       }
     } catch (_err) {
       continue;
@@ -265,12 +318,57 @@ serve(async (req: Request) => {
       ingestNews(serviceClient, topics),
     ]);
 
-    // 4. Pull candidate pool + this user's like/save state
-    const { data: candidates } = await serviceClient
-      .from("content_items")
-      .select("*")
-      .order("published_at", { ascending: false })
-      .limit(300);
+    // 4. Pull candidate pool scoped strictly to user's followed channels and interest topics
+    let candidates: any[] = [];
+
+    if (channelIds.length > 0 || topics.length > 0) {
+      const candidateQueries: Promise<any>[] = [];
+
+      // Query content from user's followed channels
+      if (channelIds.length > 0) {
+        candidateQueries.push(
+          serviceClient
+            .from("content_items")
+            .select("*")
+            .in("channel_id", channelIds)
+            .order("published_at", { ascending: false })
+            .limit(300)
+        );
+      }
+
+      // Query content matching user's interest topics (title or description)
+      if (topics.length > 0) {
+        const orFilter = topics
+          .flatMap((topic) => {
+            const cleanTopic = topic.replace(/,/g, " ").trim();
+            return [
+              `title.ilike.%${cleanTopic}%`,
+              `description.ilike.%${cleanTopic}%`,
+            ];
+          })
+          .join(",");
+
+        candidateQueries.push(
+          serviceClient
+            .from("content_items")
+            .select("*")
+            .or(orFilter)
+            .order("published_at", { ascending: false })
+            .limit(300)
+        );
+      }
+
+      const queryResults = await Promise.all(candidateQueries);
+      const candidateMap = new Map<string, any>();
+      for (const res of queryResults) {
+        if (res.data) {
+          for (const item of res.data) {
+            candidateMap.set(item.id, item);
+          }
+        }
+      }
+      candidates = Array.from(candidateMap.values());
+    }
 
     const { data: userActions } = await userClient
       .from("user_actions")

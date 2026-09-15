@@ -15,7 +15,7 @@ function useProtectedRoute() {
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || !segments || !segments[0]) return;
 
     const inAuthGroup = segments[0] === "(auth)";
 

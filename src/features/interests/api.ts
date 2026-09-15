@@ -77,11 +77,15 @@ export async function getFollowedChannels(): Promise<FollowedChannel[]> {
 
   const { data, error } = await supabase
     .from("followed_channels")
-    .select("channel_id, name, priority")
+    .select("channel_id, channel_name, priority")
     .eq("user_id", userId);
 
   if (error) throw error;
-  return (data ?? []) as FollowedChannel[];
+  return (data ?? []).map((row: any) => ({
+    channel_id: row.channel_id,
+    name: row.channel_name ?? row.name ?? "",
+    priority: row.priority,
+  }));
 }
 
 /**
@@ -100,7 +104,7 @@ export async function followChannel(
   const { error } = await supabase
     .from("followed_channels")
     .upsert(
-      { user_id: userId, channel_id: channelId, name, priority: 1 },
+      { user_id: userId, channel_id: channelId, channel_name: name, priority: 1 },
       { onConflict: "user_id,channel_id" }
     );
 
@@ -146,26 +150,4 @@ export async function searchChannels(
   });
   if (error) throw error;
   return (data?.results ?? []) as ChannelSearchResult[];
-}
-
-/**
- * Resolves a YouTube channel by exact handle, then follows it.
- * Throws if the handle cannot be resolved to a channel.
- */
-export async function resolveAndFollowChannel(
-  handle: string,
-  displayName: string
-): Promise<void> {
-  const { data, error } = await supabase.functions.invoke("search-channels", {
-    body: { handle },
-  });
-  if (error) throw error;
-
-  const results: ChannelSearchResult[] = data?.results ?? [];
-  if (results.length === 0) {
-    throw new Error(`Could not find channel for @${handle}`);
-  }
-
-  const { channelId, name } = results[0];
-  await followChannel(channelId, name || displayName);
 }

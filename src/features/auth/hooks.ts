@@ -24,7 +24,7 @@ export function useAuthListener() {
       } else {
         setLoading(false);
       }
-      console.log("MY TOKEN:", session?.access_token);
+      //console.log("MY TOKEN:", session?.access_token);
     });
 
     const { data: subscription } = supabase.auth.onAuthStateChange(

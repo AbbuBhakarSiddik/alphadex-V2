@@ -11,7 +11,7 @@ export async function fetchMessages(
 ): Promise<ChatMessage[]> {
   const { data, error } = await supabase
     .from("chat_messages")
-    .select("id, room_id, user_id, text, attachment_url, attachment_type, status, created_at, profiles(full_name, avatar_url)")
+    .select("*, profiles(full_name, avatar_url)")
     .eq("room_id", roomId)
     .eq("status", "visible")
     .order("created_at", { ascending: false })
@@ -22,14 +22,14 @@ export async function fetchMessages(
   return (data || []).map((row: any) => ({
     id: row.id,
     room_id: row.room_id,
-    user_id: row.user_id,
-    text: row.text,
+    user_id: row.user_id || row.sender_id,
+    text: row.text ?? row.content ?? null,
     attachment_url: row.attachment_url,
     attachment_type: row.attachment_type,
     status: row.status,
     created_at: row.created_at,
-    sender_name: row.profiles?.full_name ?? "Anonymous",
-    sender_avatar_url: row.profiles?.avatar_url ?? null,
+    sender_name: row.profiles?.full_name ?? row.sender_name ?? "Anonymous",
+    sender_avatar_url: row.profiles?.avatar_url ?? row.sender_avatar_url ?? null,
   }));
 }
 

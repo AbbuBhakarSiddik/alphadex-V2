@@ -4,8 +4,10 @@ import {
   Text,
   ScrollView,
   Pressable,
+  TextInput,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -26,12 +28,19 @@ import {
   Heart,
   TrendingUp,
   Coins,
+  Search,
+  X,
+  Tv,
 } from "lucide-react-native";
 import { Chip } from "../src/components/ui/Chip";
 import { Button } from "../src/components/ui/Button";
-import { getUserInterests, setUserInterests } from "../src/features/interests/api";
+import {
+  getUserInterests,
+  setUserInterests,
+  searchChannels,
+  type ChannelSearchResult,
+} from "../src/features/interests/api";
 import { useInterestsManager } from "../src/features/interests/hooks";
-import { RECOMMENDED_STUDY_CHANNELS } from "../src/features/interests/types";
 import { useFeedStore } from "../src/features/feed/store";
 
 const TOPICS = [
@@ -59,12 +68,18 @@ export default function ManageInterests() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Channel management hook
   const {
     followedChannels,
     isLoadingChannels,
-    resolvingHandles,
-    followRecommended,
+    toggleChannel,
   } = useInterestsManager();
+
+  // Search state
+  const [channelQuery, setChannelQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<ChannelSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -87,11 +102,50 @@ export default function ManageInterests() {
     };
   }, []);
 
+  // Debounced search for channels
+  useEffect(() => {
+    if (!channelQuery.trim()) {
+      setSearchResults([]);
+      setSearchError(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      setSearchError(null);
+      try {
+        const results = await searchChannels(channelQuery.trim());
+        setSearchResults(results);
+        if (results.length === 0) {
+          setSearchError(`No channels found matching "${channelQuery.trim()}"`);
+        }
+      } catch (err: any) {
+        setSearchError(err.message || "Failed to search channels");
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [channelQuery]);
+
   const toggleSelect = (id: string) => {
     if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter((x) => x !== id));
     } else {
       setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleToggleChannel = async (channelId: string, name: string) => {
+    const isFollowed = followedChannels.some((c) => c.channel_id === channelId);
+    try {
+      await toggleChannel(channelId, name, isFollowed);
+    } catch (err: any) {
+      Alert.alert(
+        "Error",
+        err.message || `Failed to ${isFollowed ? "unfollow" : "follow"} channel.`
+      );
     }
   };
 
@@ -112,28 +166,6 @@ export default function ManageInterests() {
   };
 
   const isSaveDisabled = selectedIds.length < 3;
-
-  /** Returns the channelId for a followed recommended channel, or undefined. */
-  const getFollowedChannelId = (displayName: string): string | undefined =>
-    followedChannels.find(
-      (c) => c.name.toLowerCase() === displayName.toLowerCase()
-    )?.channel_id;
-
-  const handleRecommendedPress = async (
-    handle: string,
-    displayName: string
-  ) => {
-    const followedId = getFollowedChannelId(displayName);
-    const isFollowed = !!followedId;
-    try {
-      await followRecommended(handle, displayName, isFollowed, followedId);
-    } catch (err: any) {
-      Alert.alert(
-        "Error",
-        err.message || `Failed to ${isFollowed ? "unfollow" : "follow"} channel.`
-      );
-    }
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-black" edges={["top", "bottom"]}>
@@ -158,7 +190,9 @@ export default function ManageInterests() {
           <ScrollView
             className="flex-1 px-5 mt-5"
             contentContainerStyle={{ paddingBottom: 32 }}
+            keyboardShouldPersistTaps="handled"
           >
+            {/* ── Section 1: Study Topics ── */}
             <Text className="text-xl font-bold text-white mb-1 tracking-tight">
               Update your topics 🎯
             </Text>
@@ -182,52 +216,153 @@ export default function ManageInterests() {
               })}
             </View>
 
-            {/* ── Recommended for Study ── */}
+            {/* ── Section 2: Channel Search ── */}
             <Text className="text-base font-bold text-white mb-1">
-              Recommended for Study 📚
+              Search & Follow Channels 📺
             </Text>
-            <Text className="text-[#71717A] text-xs mb-4">
-              Tap to follow top educational YouTube channels instantly.
+            <Text className="text-[#71717A] text-xs mb-3">
+              Search any YouTube educational creator to pull their videos into your feed.
             </Text>
 
-            {isLoadingChannels ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <View className="flex-row flex-wrap gap-2 mb-4">
-                {RECOMMENDED_STUDY_CHANNELS.map(({ handle, displayName }) => {
-                  const isResolving = resolvingHandles.has(handle);
-                  const isFollowed = !!getFollowedChannelId(displayName);
+            {/* Plain Search Bar */}
+            <View className="flex-row items-center bg-[#121216] border border-[#222228] rounded-xl px-3 py-2.5 mb-4">
+              <Search size={16} color="#71717A" />
+              <TextInput
+                value={channelQuery}
+                onChangeText={setChannelQuery}
+                placeholder="Search channels (e.g. 3Blue1Brown, Veritasium)..."
+                placeholderTextColor="#52525B"
+                className="flex-1 text-sm text-white ml-2.5 p-0"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="search"
+              />
+              {channelQuery.length > 0 && (
+                <Pressable
+                  onPress={() => setChannelQuery("")}
+                  hitSlop={8}
+                  className="p-1"
+                >
+                  <X size={14} color="#71717A" />
+                </Pressable>
+              )}
+            </View>
 
+            {/* Search Results List */}
+            {isSearching ? (
+              <View className="py-4 items-center mb-4">
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text className="text-xs text-[#71717A] mt-2 font-mono">
+                  Searching channels...
+                </Text>
+              </View>
+            ) : searchError ? (
+              <View className="p-3 mb-4 rounded-xl bg-[#161212] border border-red-500/20">
+                <Text className="text-xs text-red-400 text-center">{searchError}</Text>
+              </View>
+            ) : searchResults.length > 0 ? (
+              <View className="mb-6 gap-2">
+                <Text className="text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-1">
+                  Search Results
+                </Text>
+                {searchResults.map((result) => {
+                  const isFollowed = followedChannels.some(
+                    (c) => c.channel_id === result.channelId
+                  );
                   return (
-                    <Pressable
-                      key={handle}
-                      onPress={() => handleRecommendedPress(handle, displayName)}
-                      disabled={isResolving}
-                      className={`flex-row items-center px-3.5 py-1.5 rounded-full border ${
-                        isFollowed
-                          ? "bg-white border-white"
-                          : "bg-[#141414] border-[#27272A]"
-                      }`}
+                    <View
+                      key={result.channelId}
+                      className="flex-row items-center justify-between p-3 rounded-xl bg-[#121216] border border-[#222228]"
                     >
-                      {isResolving ? (
-                        <ActivityIndicator
-                          size="small"
-                          color={isFollowed ? "#000000" : "#FFFFFF"}
-                          style={{ marginRight: 6 }}
-                        />
-                      ) : null}
-                      <Text
-                        className={`text-xs font-semibold ${
-                          isFollowed ? "text-black" : "text-[#A1A1AA]"
+                      <View className="flex-row items-center gap-3 flex-1 mr-3">
+                        {result.thumbnailUrl ? (
+                          <Image
+                            source={{ uri: result.thumbnailUrl }}
+                            className="w-9 h-9 rounded-full bg-[#1F1F24]"
+                          />
+                        ) : (
+                          <View className="w-9 h-9 rounded-full bg-[#1F1F24] items-center justify-center">
+                            <Tv size={16} color="#A1A1AA" />
+                          </View>
+                        )}
+                        <Text
+                          className="text-sm font-semibold text-white flex-1"
+                          numberOfLines={1}
+                        >
+                          {result.name}
+                        </Text>
+                      </View>
+
+                      <Pressable
+                        onPress={() => handleToggleChannel(result.channelId, result.name)}
+                        className={`px-3 py-1.5 rounded-full border ${
+                          isFollowed
+                            ? "bg-white/10 border-white/20"
+                            : "bg-white border-white"
                         }`}
                       >
-                        {displayName}
-                      </Text>
-                    </Pressable>
+                        <Text
+                          className={`text-xs font-bold ${
+                            isFollowed ? "text-white" : "text-black"
+                          }`}
+                        >
+                          {isFollowed ? "Following" : "Follow"}
+                        </Text>
+                      </Pressable>
+                    </View>
                   );
                 })}
               </View>
-            )}
+            ) : null}
+
+            {/* ── Section 3: Currently Following ── */}
+            <View className="mb-6">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-base font-bold text-white tracking-tight">
+                  Currently following
+                </Text>
+                <Text className="text-xs font-mono text-[#71717A]">
+                  {followedChannels.length} channels
+                </Text>
+              </View>
+
+              {isLoadingChannels ? (
+                <View className="py-4 items-center">
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                </View>
+              ) : followedChannels.length === 0 ? (
+                <View className="p-4 rounded-xl bg-[#121216] border border-[#222228] items-center justify-center">
+                  <Text className="text-xs text-[#71717A] text-center">
+                    No channels followed yet. Search above to find and follow channels.
+                  </Text>
+                </View>
+              ) : (
+                <View className="flex-row flex-wrap gap-2">
+                  {followedChannels.map((channel) => (
+                    <View
+                      key={channel.channel_id}
+                      className="flex-row items-center bg-[#141418] border border-[#27272A] rounded-full pl-3.5 pr-2 py-1.5"
+                    >
+                      <Text
+                        className="text-xs font-semibold text-white mr-1.5"
+                        numberOfLines={1}
+                      >
+                        {channel.name}
+                      </Text>
+                      <Pressable
+                        onPress={() =>
+                          handleToggleChannel(channel.channel_id, channel.name)
+                        }
+                        hitSlop={8}
+                        className="w-5 h-5 rounded-full bg-white/10 items-center justify-center active:bg-white/20"
+                      >
+                        <X size={11} color="#A1A1AA" />
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
           </ScrollView>
 
           {/* Action Container */}
@@ -252,4 +387,3 @@ export default function ManageInterests() {
     </SafeAreaView>
   );
 }
-

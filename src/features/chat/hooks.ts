@@ -50,15 +50,17 @@ export function useChat(roomId: string) {
           const raw = payload.new as any;
           if (raw.status !== "visible") return;
 
-          // Fetch sender profile details for the incoming message
-          let sender_name = "Anonymous";
-          let sender_avatar_url: string | null = null;
+          const userId = raw.user_id || raw.sender_id;
 
-          if (raw.user_id) {
+          // Fetch sender profile details for the incoming message
+          let sender_name = raw.sender_name || "Anonymous";
+          let sender_avatar_url: string | null = raw.sender_avatar_url || null;
+
+          if (userId && !raw.sender_name) {
             const { data: profile } = await supabase
               .from("profiles")
               .select("full_name, avatar_url")
-              .eq("id", raw.user_id)
+              .eq("id", userId)
               .maybeSingle();
 
             if (profile) {
@@ -70,8 +72,8 @@ export function useChat(roomId: string) {
           const newMsg: ChatMessage = {
             id: raw.id,
             room_id: raw.room_id,
-            user_id: raw.user_id,
-            text: raw.text,
+            user_id: userId,
+            text: raw.text ?? raw.content ?? null,
             attachment_url: raw.attachment_url,
             attachment_type: raw.attachment_type,
             status: raw.status,
@@ -108,10 +110,24 @@ export function useChat(roomId: string) {
       try {
         const res = await sendMessage(roomId, trimmed);
         if (res.success && res.message) {
+          const raw = res.message as any;
+          const normalizedMsg: ChatMessage = {
+            id: raw.id,
+            room_id: raw.room_id,
+            user_id: raw.user_id || raw.sender_id,
+            text: raw.text ?? raw.content ?? null,
+            attachment_url: raw.attachment_url,
+            attachment_type: raw.attachment_type,
+            status: raw.status,
+            created_at: raw.created_at,
+            sender_name: raw.sender_name ?? "Anonymous",
+            sender_avatar_url: raw.sender_avatar_url ?? null,
+          };
+
           // Add to local state if not already received via realtime
           setMessages((prev) => {
-            if (prev.some((m) => m.id === res.message!.id)) return prev;
-            return [res.message!, ...prev];
+            if (prev.some((m) => m.id === normalizedMsg.id)) return prev;
+            return [normalizedMsg, ...prev];
           });
         }
         return res;
@@ -147,10 +163,24 @@ export function useChat(roomId: string) {
         const res = await sendMessage(roomId, text?.trim() || undefined, pendingPath, attachmentType);
 
         if (res.success && res.message) {
+          const raw = res.message as any;
+          const normalizedMsg: ChatMessage = {
+            id: raw.id,
+            room_id: raw.room_id,
+            user_id: raw.user_id || raw.sender_id,
+            text: raw.text ?? raw.content ?? null,
+            attachment_url: raw.attachment_url,
+            attachment_type: raw.attachment_type,
+            status: raw.status,
+            created_at: raw.created_at,
+            sender_name: raw.sender_name ?? "Anonymous",
+            sender_avatar_url: raw.sender_avatar_url ?? null,
+          };
+
           // Add to local state if not already present
           setMessages((prev) => {
-            if (prev.some((m) => m.id === res.message!.id)) return prev;
-            return [res.message!, ...prev];
+            if (prev.some((m) => m.id === normalizedMsg.id)) return prev;
+            return [normalizedMsg, ...prev];
           });
         }
         return res;
