@@ -1,10 +1,5 @@
-import React from "react";
-import { Pressable, Text } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
+import React, { useRef } from "react";
+import { Pressable, Text, Animated } from "react-native";
 
 type Props = {
   label: string;
@@ -14,26 +9,37 @@ type Props = {
 };
 
 export function Chip({ label, isActive, onPress, icon: Icon }: Props) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const scale = useRef(new Animated.Value(1)).current;
 
-  const activeBg = "bg-[#0F172A] border-[#0F172A] shadow-sm";
-  const inactiveBg = "bg-white border-black/[0.06] shadow-xs";
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 20,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 20,
+    }).start();
+  };
+
+  const activeBg = "bg-[#0F172A] border-[#0F172A]";
+  const inactiveBg = "bg-white border-black/[0.06]";
   const activeText = "text-white font-semibold text-xs";
   const inactiveText = "text-[#334155] font-medium text-xs";
 
   return (
-    <Animated.View style={animStyle}>
+    <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable
         onPress={onPress}
-        onPressIn={() => {
-          scale.value = withSpring(0.95, { damping: 16, stiffness: 350 });
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, { damping: 16, stiffness: 350 });
-        }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         className={`flex-row items-center justify-center px-4 py-2.5 rounded-2xl border ${
           isActive ? activeBg : inactiveBg
         }`}

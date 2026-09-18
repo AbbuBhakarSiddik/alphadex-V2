@@ -1,10 +1,5 @@
-import React from "react";
-import { Pressable, Text, ActivityIndicator } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
+import React, { useRef } from "react";
+import { Pressable, Text, ActivityIndicator, Animated } from "react-native";
 
 type Props = {
   label: string;
@@ -14,22 +9,33 @@ type Props = {
 };
 
 export function GradientButton({ label, onPress, isLoading, disabled }: Props) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.96,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 20,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 20,
+    }).start();
+  };
 
   return (
-    <Animated.View style={[animStyle, { borderRadius: 9999 }]} className="w-full">
+    <Animated.View style={{ transform: [{ scale }], borderRadius: 9999, width: "100%" }}>
       <Pressable
         onPress={onPress}
         disabled={disabled || isLoading}
-        onPressIn={() => {
-          scale.value = withSpring(0.96, { damping: 16, stiffness: 350 });
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, { damping: 16, stiffness: 350 });
-        }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         className={`w-full py-3.5 px-6 rounded-full items-center justify-center bg-white ${
           disabled || isLoading ? "opacity-50" : "active:bg-neutral-200"
         }`}

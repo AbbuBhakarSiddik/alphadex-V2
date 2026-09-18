@@ -1,11 +1,6 @@
-import React from "react";
-import { View, Pressable, type StyleProp, type ViewStyle, Platform } from "react-native";
+import React, { useRef } from "react";
+import { View, Pressable, type StyleProp, type ViewStyle, Platform, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
 
 export type BentoVariant =
   | "default"
@@ -41,10 +36,25 @@ export function BentoCard({
   onPress,
   disabled,
 }: BentoCardProps) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 20,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 20,
+    }).start();
+  };
 
   const gradientColors = GRADIENT_MAP[variant];
 
@@ -90,16 +100,12 @@ export function BentoCard({
   }
 
   return (
-    <Animated.View style={animStyle}>
+    <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable
         onPress={onPress}
         disabled={disabled}
-        onPressIn={() => {
-          scale.value = withSpring(0.98, { damping: 16, stiffness: 350 });
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, { damping: 16, stiffness: 350 });
-        }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
       >
         {cardContent}
       </Pressable>

@@ -1,10 +1,11 @@
-import React from "react";
-import { Pressable, Text, ActivityIndicator, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
+import React, { useRef } from "react";
+import {
+  Pressable,
+  Text,
+  ActivityIndicator,
+  View,
+  Animated,
+} from "react-native";
 
 type Props = {
   label: string;
@@ -25,10 +26,25 @@ export function Button({
   icon,
   size = "default",
 }: Props) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 20,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 20,
+    }).start();
+  };
 
   const isPrimary = variant === "primary";
   const isSecondary = variant === "secondary";
@@ -55,11 +71,11 @@ export function Button({
 
   if (isPrimary) {
     containerStyles +=
-      "bg-[#0F172A] shadow-sm active:bg-[#1E293B] border border-black/10";
+      "bg-[#0F172A] active:bg-[#1E293B] border border-black/10";
     textStyles += "text-white font-bold";
   } else if (isSecondary) {
     containerStyles +=
-      "bg-white border border-black/[0.06] shadow-sm active:bg-[#F8F9FA]";
+      "bg-white border border-black/[0.06] active:bg-[#F8F9FA]";
     textStyles += "text-[#0F172A]";
   } else if (isDestructive) {
     containerStyles +=
@@ -77,16 +93,12 @@ export function Button({
   const spinnerColor = isPrimary ? "#FFFFFF" : isDestructive ? "#E11D48" : "#0F172A";
 
   return (
-    <Animated.View style={[animStyle]} className="w-full">
+    <Animated.View style={{ transform: [{ scale }], width: "100%" }}>
       <Pressable
         onPress={onPress}
         disabled={disabled || isLoading}
-        onPressIn={() => {
-          scale.value = withSpring(0.98, { damping: 16, stiffness: 350 });
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, { damping: 16, stiffness: 350 });
-        }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         className={`${containerStyles} ${sizeStyles} ${
           disabled || isLoading ? "opacity-50" : ""
         }`}

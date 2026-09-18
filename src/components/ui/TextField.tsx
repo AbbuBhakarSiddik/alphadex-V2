@@ -34,11 +34,11 @@ export function TextField({
       </View>
 
       <View
-        className={`bg-white rounded-2xl border flex-row items-center justify-between shadow-xs transition-colors ${
+        className={`bg-white rounded-2xl flex-row items-center justify-between border ${
           error
             ? "border-rose-400 bg-rose-50/20"
             : isFocused
-            ? "border-[#0F172A] ring-1 ring-[#0F172A]"
+            ? "border-[#0F172A] border-[1.5px]"
             : "border-black/[0.08]"
         }`}
       >
