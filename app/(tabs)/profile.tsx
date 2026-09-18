@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Alert, ActivityIndicator, Image } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Settings,
@@ -299,6 +299,16 @@ export default function Profile() {
           {/* Sign Out Action */}
           <View className="px-4">
             <Button label="Sign Out" onPress={signOut} variant="destructive" />
+          </View>
+
+          {/* App Branding Footer */}
+          <View className="items-center mt-6 mb-4">
+            <Image
+              source={require("../../assets/logo.png")}
+              style={{ width: 36, height: 36, borderRadius: 10, marginBottom: 8 }}
+              resizeMode="cover"
+            />
+            <Text className="text-zinc-500 text-xs font-mono font-medium">Alphadex v1.0.0</Text>
           </View>
         </ScrollView>
       </SafeAreaView>

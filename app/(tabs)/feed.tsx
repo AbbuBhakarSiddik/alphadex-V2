@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, ScrollView, RefreshControl } from "react-native";
+import { View, Text, ScrollView, RefreshControl, Image } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
@@ -104,11 +104,15 @@ export default function Feed() {
         {/* Top App Bar (Swiss Minimalist Header) */}
         <View className="px-4 py-3 flex-row justify-between items-center border-b border-white/10 bg-black/40 backdrop-blur-md">
           <View className="flex-row items-center gap-2">
-            <View className="w-2 h-2 rounded-full bg-white shadow-sm shadow-white" />
-            <Text className="text-white text-[15px] font-black tracking-[3px]">
+            <Image
+              source={require("../../assets/logo.png")}
+              style={{ width: 22, height: 22, borderRadius: 6 }}
+              resizeMode="cover"
+            />
+            <Text className="text-white text-[15px] font-black tracking-[2.5px]">
               ALPHADEX
             </Text>
-            <Text className="text-[#52525B] text-[11px] font-mono font-medium ml-1">
+            <Text className="text-[#52525B] text-[11px] font-mono font-medium ml-0.5">
               01 // STREAM
             </Text>
           </View>

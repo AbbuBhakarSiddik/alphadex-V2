@@ -19,27 +19,30 @@ import {
   Heart,
   TrendingUp,
   Coins,
+  Compass,
+  Check,
+  ArrowRight,
 } from "lucide-react-native";
 import { Chip } from "../../src/components/ui/Chip";
 import { Button } from "../../src/components/ui/Button";
 import { setUserInterests } from "../../src/features/interests/api";
 
 const TOPICS = [
-  { id: "math", name: "Mathematics", icon: Calculator },
-  { id: "physics", name: "Physics", icon: Atom },
-  { id: "biology", name: "Biology", icon: FlaskConical },
+  { id: "ai", name: "AI & Machine Learning", icon: Brain },
   { id: "cs", name: "Computer Science", icon: Code2 },
-  { id: "ai", name: "AI & ML", icon: Brain },
+  { id: "math", name: "Mathematics", icon: Calculator },
   { id: "tech", name: "Technology", icon: Cpu },
-  { id: "history", name: "History", icon: History },
-  { id: "geography", name: "Geography", icon: Globe },
-  { id: "finance", name: "Finance", icon: Coins },
-  { id: "business", name: "Business", icon: TrendingUp },
-  { id: "music", name: "Music", icon: Music },
-  { id: "art", name: "Art & Design", icon: Palette },
-  { id: "literature", name: "Literature", icon: BookOpen },
-  { id: "photography", name: "Photography", icon: Camera },
-  { id: "health", name: "Health", icon: Heart },
+  { id: "physics", name: "Physics", icon: Atom },
+  { id: "finance", name: "Finance & Wealth", icon: Coins },
+  { id: "business", name: "Entrepreneurship", icon: TrendingUp },
+  { id: "biology", name: "Biology & Life", icon: FlaskConical },
+  { id: "art", name: "Design & UX", icon: Palette },
+  { id: "literature", name: "Literature & Writing", icon: BookOpen },
+  { id: "history", name: "World History", icon: History },
+  { id: "geography", name: "Earth & Geography", icon: Globe },
+  { id: "music", name: "Music Theory", icon: Music },
+  { id: "photography", name: "Visual Arts", icon: Camera },
+  { id: "health", name: "Health & Wellness", icon: Heart },
 ];
 
 export default function Interests() {
@@ -68,32 +71,65 @@ export default function Interests() {
   };
 
   const isContinueDisabled = selectedIds.length < 3;
+  const progressPercent = Math.min(100, Math.round((selectedIds.length / 3) * 100));
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAFAFA]" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-[#F9F9FB]" edges={["top", "bottom"]}>
+      {/* Ambient Pastel Background Glow */}
+      <LinearGradient
+        colors={["rgba(237, 233, 254, 0.4)", "rgba(204, 251, 241, 0.25)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          position: "absolute",
+          top: -40,
+          right: -40,
+          width: 280,
+          height: 280,
+          borderRadius: 140,
+        }}
+        pointerEvents="none"
+      />
+
       {/* Progress Bar Header */}
-      <View className="px-6 pt-4 pb-2">
-        <Text className="text-xs text-gray-500 mb-1">Step 3 of 3</Text>
-        <View className="w-full h-1.5 bg-[#E8E8E8] rounded-full overflow-hidden">
+      <View className="px-6 pt-4 pb-3">
+        <View className="flex-row items-center justify-between mb-2">
+          <View className="flex-row items-center gap-1.5 bg-white border border-black/[0.04] px-3 py-1 rounded-full shadow-xs">
+            <Compass size={12} color="#4F46E5" />
+            <Text className="text-[11px] font-bold text-[#0F172A]">
+              Step 2 of 2
+            </Text>
+          </View>
+          <Text className="text-xs font-semibold text-[#64748B]">
+            {selectedIds.length} / 3 selected
+          </Text>
+        </View>
+
+        {/* Progress bar container */}
+        <View className="w-full h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
           <LinearGradient
-            colors={["#FF6B35", "#F72C25"]}
+            colors={["#4F46E5", "#06B6D4"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={{ width: "100%", height: "100%" }}
+            style={{ width: `${progressPercent}%`, height: "100%" }}
           />
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6 mt-6" contentContainerStyle={{ paddingBottom: 32 }}>
-        <Text className="text-3xl font-bold text-[#1A1A1A] mb-2">
-          What are you into? 🎓
+      <ScrollView
+        className="flex-1 px-6 mt-3"
+        contentContainerStyle={{ paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text className="text-2xl font-extrabold text-[#0F172A] tracking-tight mb-1">
+          Curate Your Feed ✨
         </Text>
-        <Text className="text-gray-500 text-sm mb-6">
-          Select at least 3 topics to build your personalized feed.
+        <Text className="text-xs text-[#64748B] mb-5 leading-relaxed">
+          Select 3 or more topics to personalize your lessons, flashcards, and daily challenges.
         </Text>
 
-        {/* Chip grid (wrap) */}
-        <View className="flex-row flex-wrap gap-2 mb-8">
+        {/* Bento Chip Wrap Grid */}
+        <View className="flex-row flex-wrap gap-2.5 mb-6">
           {TOPICS.map((topic) => {
             const isActive = selectedIds.includes(topic.id);
             return (
@@ -109,24 +145,37 @@ export default function Interests() {
         </View>
       </ScrollView>
 
-      {/* Continue Action Container */}
-      <View className="px-6 py-4 border-t border-[#E8E8E8] bg-white">
-        <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-gray-500 text-sm">Selected</Text>
-          <Text className="text-sm font-semibold text-[#FF6B35]">
-            {selectedIds.length} of 3 required
+      {/* Sticky Bottom Bento Action Container */}
+      <View className="px-6 py-4 bg-white rounded-t-3xl border-t border-black/[0.04] shadow-sm">
+        <View className="flex-row items-center justify-between mb-3.5">
+          <Text className="text-xs font-medium text-[#64748B]">
+            Required selection
           </Text>
+          <View className="flex-row items-center gap-1.5">
+            {selectedIds.length >= 3 ? (
+              <View className="w-4 h-4 rounded-full bg-emerald-100 items-center justify-center">
+                <Check size={11} color="#059669" strokeWidth={2.5} />
+              </View>
+            ) : null}
+            <Text
+              className={`text-xs font-bold ${
+                selectedIds.length >= 3 ? "text-emerald-600" : "text-[#4F46E5]"
+              }`}
+            >
+              {selectedIds.length} of 3 selected
+            </Text>
+          </View>
         </View>
 
         <Button
-          label="Continue →"
+          label={selectedIds.length >= 3 ? "Complete & Open Feed" : "Select at least 3 topics"}
           onPress={handleContinue}
           isLoading={isSaving}
           disabled={isContinueDisabled}
           variant="primary"
+          icon={<ArrowRight size={16} color="#FFFFFF" strokeWidth={2.2} />}
         />
       </View>
     </SafeAreaView>
   );
 }
-

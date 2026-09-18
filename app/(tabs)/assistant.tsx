@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Keyboard,
   Pressable,
+  Image,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
@@ -91,9 +92,12 @@ export default function AssistantScreen() {
           } gap-2 px-4`}
       >
         {!isUser && (
-          <View className="w-7 h-7 rounded-full bg-[#181824] border border-white/20 items-center justify-center mt-1">
-            <Bot size={14} color="#FFFFFF" strokeWidth={1.8} />
-          </View>
+          <Image
+            source={require("../../assets/logo.png")}
+            style={{ width: 28, height: 28, borderRadius: 8 }}
+            className="mt-1"
+            resizeMode="cover"
+          />
         )}
 
         <View className={isUser ? "max-w-[80%] items-end" : "flex-1 items-start"}>
@@ -134,9 +138,12 @@ export default function AssistantScreen() {
 
     return (
       <View className="mb-4 flex-row items-start gap-2 px-4 justify-start">
-        <View className="w-7 h-7 rounded-full bg-[#181824] border border-white/20 items-center justify-center mt-1">
-          <Bot size={14} color="#FFFFFF" strokeWidth={1.8} />
-        </View>
+        <Image
+          source={require("../../assets/logo.png")}
+          style={{ width: 28, height: 28, borderRadius: 8 }}
+          className="mt-1"
+          resizeMode="cover"
+        />
         <View className="flex-1 items-start">
           <Text className="text-[10px] font-mono font-medium text-[#71717A] mb-1 ml-1 uppercase tracking-wider">
             ALPHADEX // AI TUTOR
@@ -176,9 +183,11 @@ export default function AssistantScreen() {
         {/* Swiss Minimalist Header */}
         <View className="h-14 border-b border-white/10 px-5 flex-row items-center justify-between bg-black/40 backdrop-blur-md">
           <View className="flex-row items-center gap-2.5">
-            <View className="w-7 h-7 rounded-full bg-white/10 border border-white/20 items-center justify-center">
-              <Sparkles size={14} color="#FFFFFF" strokeWidth={2} />
-            </View>
+            <Image
+              source={require("../../assets/logo.png")}
+              style={{ width: 28, height: 28, borderRadius: 8 }}
+              resizeMode="cover"
+            />
             <View>
               <View className="flex-row items-center gap-1.5">
                 <Text className="text-sm font-bold text-white tracking-wide">
@@ -218,8 +227,12 @@ export default function AssistantScreen() {
             </View>
           ) : messages.length === 0 ? (
             <View className="flex-1 items-center justify-center px-6">
-              <View className="w-14 h-14 rounded-2xl bg-[#0E0E14]/80 border border-white/15 items-center justify-center mb-4 shadow-lg">
-                <Sparkles size={24} color="#FFFFFF" strokeWidth={1.8} />
+              <View className="w-16 h-16 rounded-2xl bg-[#FAF7F2] items-center justify-center mb-4 shadow-lg overflow-hidden border border-white/20">
+                <Image
+                  source={require("../../assets/logo.png")}
+                  style={{ width: 64, height: 64, borderRadius: 16 }}
+                  resizeMode="cover"
+                />
               </View>
               <Text className="text-base font-bold text-white text-center tracking-tight">
                 Ask anything about your study stream

@@ -5,9 +5,18 @@ import { Eye, EyeOff } from "lucide-react-native";
 type Props = TextInputProps & {
   label: string;
   error?: string;
+  hint?: string;
 };
 
-export function TextField({ label, error, secureTextEntry, onFocus, onBlur, ...inputProps }: Props) {
+export function TextField({
+  label,
+  error,
+  hint,
+  secureTextEntry,
+  onFocus,
+  onBlur,
+  ...inputProps
+}: Props) {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -15,19 +24,27 @@ export function TextField({ label, error, secureTextEntry, onFocus, onBlur, ...i
 
   return (
     <View className="w-full mb-4">
-      <Text className="text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-1.5">{label}</Text>
+      <View className="flex-row items-center justify-between mb-1.5">
+        <Text className="text-xs font-semibold text-[#475569] tracking-wide">
+          {label}
+        </Text>
+        {hint && (
+          <Text className="text-[11px] text-[#94A3B8] font-normal">{hint}</Text>
+        )}
+      </View>
+
       <View
-        className={`bg-[#121212] rounded-xl border flex-row items-center justify-between ${
+        className={`bg-white rounded-2xl border flex-row items-center justify-between shadow-xs transition-colors ${
           error
-            ? "border-red-500"
+            ? "border-rose-400 bg-rose-50/20"
             : isFocused
-            ? "border-white"
-            : "border-[#27272A]"
+            ? "border-[#0F172A] ring-1 ring-[#0F172A]"
+            : "border-black/[0.08]"
         }`}
       >
         <TextInput
-          className="text-[#F5F5F7] text-sm px-4 py-3 flex-1 rounded-xl"
-          placeholderTextColor="#71717A"
+          className="text-[#0F172A] text-sm px-4 py-3.5 flex-1 font-medium"
+          placeholderTextColor="#94A3B8"
           secureTextEntry={isSecure}
           onFocus={(e) => {
             setIsFocused(true);
@@ -42,18 +59,23 @@ export function TextField({ label, error, secureTextEntry, onFocus, onBlur, ...i
         {secureTextEntry ? (
           <Pressable
             onPress={() => setShowPassword(!showPassword)}
-            className="pr-4 py-3"
+            className="pr-4 py-3.5"
             hitSlop={8}
           >
             {showPassword ? (
-              <EyeOff size={18} color="#A1A1AA" strokeWidth={1.5} />
+              <EyeOff size={18} color="#64748B" strokeWidth={1.75} />
             ) : (
-              <Eye size={18} color="#A1A1AA" strokeWidth={1.5} />
+              <Eye size={18} color="#64748B" strokeWidth={1.75} />
             )}
           </Pressable>
         ) : null}
       </View>
-      {error ? <Text className="text-red-400 text-xs mt-1">{error}</Text> : null}
+
+      {error ? (
+        <Text className="text-rose-600 text-xs mt-1.5 font-medium ml-1">
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
