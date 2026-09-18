@@ -2,6 +2,7 @@ import "../global.css";
 import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuthListener, useAuth } from "../src/features/auth/hooks";
 
 /**
@@ -32,15 +33,16 @@ export default function RootLayout() {
   useProtectedRoute();
 
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="manage-interests" />
         <Stack.Screen name="my-storage" />
         <Stack.Screen name="study-schedule" />
       </Stack>
-    </>
+    </SafeAreaProvider>
   );
 }

@@ -311,10 +311,11 @@ export default function AssistantScreen() {
             <Pressable
               onPress={() => handleSend()}
               disabled={!inputText.trim() || isSending}
-              className={`w-9 h-9 rounded-full items-center justify-center ${inputText.trim() && !isSending
-                  ? "bg-white shadow-md shadow-white/20 active:opacity-75"
+              className={`w-9 h-9 rounded-full items-center justify-center active:opacity-75 ${
+                inputText.trim() && !isSending
+                  ? "bg-white"
                   : "bg-[#181820] opacity-50"
-                }`}
+              }`}
             >
               {isSending ? (
                 <ActivityIndicator size="small" color="#000000" />

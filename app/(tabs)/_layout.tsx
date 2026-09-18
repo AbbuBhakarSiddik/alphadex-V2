@@ -6,6 +6,23 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Search, Sparkles, MessageCircle, User, Shield } from "lucide-react-native";
 import { useAuth } from "../../src/features/auth/hooks";
 
+import type { ColorValue } from "react-native";
+
+interface TabBarIconProps {
+  Icon: React.ComponentType<{ color: any; size: number; strokeWidth: number }>;
+  color: ColorValue | string;
+  focused: boolean;
+}
+
+function TabBarIcon({ Icon, color, focused }: TabBarIconProps) {
+  return (
+    <View style={styles.iconContainer}>
+      <Icon color={color} size={20} strokeWidth={focused ? 2.2 : 1.8} />
+      {focused && <View style={styles.activeIndicator} />}
+    </View>
+  );
+}
+
 export default function TabsLayout() {
   const { isAdmin } = useAuth();
   const insets = useSafeAreaInsets();
@@ -37,7 +54,7 @@ export default function TabsLayout() {
         tabBarBackground: () => (
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
-            <View className="h-[1px] w-full bg-white/15" />
+            <View style={styles.tabBarTopBorder} />
           </View>
         ),
         tabBarLabelStyle: {
@@ -52,12 +69,7 @@ export default function TabsLayout() {
         options={{
           title: "Feed",
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center">
-              <Home color={color} size={20} strokeWidth={focused ? 2.2 : 1.8} />
-              {focused && (
-                <View className="w-1.5 h-1.5 rounded-full bg-white mt-1 shadow-sm shadow-white" />
-              )}
-            </View>
+            <TabBarIcon Icon={Home} color={color} focused={focused} />
           ),
         }}
       />
@@ -66,12 +78,7 @@ export default function TabsLayout() {
         options={{
           title: "Search",
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center">
-              <Search color={color} size={20} strokeWidth={focused ? 2.2 : 1.8} />
-              {focused && (
-                <View className="w-1.5 h-1.5 rounded-full bg-white mt-1 shadow-sm shadow-white" />
-              )}
-            </View>
+            <TabBarIcon Icon={Search} color={color} focused={focused} />
           ),
         }}
       />
@@ -80,12 +87,7 @@ export default function TabsLayout() {
         options={{
           title: "Tutor",
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center">
-              <Sparkles color={color} size={20} strokeWidth={focused ? 2.2 : 1.8} />
-              {focused && (
-                <View className="w-1.5 h-1.5 rounded-full bg-white mt-1 shadow-sm shadow-white" />
-              )}
-            </View>
+            <TabBarIcon Icon={Sparkles} color={color} focused={focused} />
           ),
         }}
       />
@@ -94,12 +96,7 @@ export default function TabsLayout() {
         options={{
           title: "Chat",
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center">
-              <MessageCircle color={color} size={20} strokeWidth={focused ? 2.2 : 1.8} />
-              {focused && (
-                <View className="w-1.5 h-1.5 rounded-full bg-white mt-1 shadow-sm shadow-white" />
-              )}
-            </View>
+            <TabBarIcon Icon={MessageCircle} color={color} focused={focused} />
           ),
         }}
       />
@@ -108,12 +105,7 @@ export default function TabsLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center">
-              <User color={color} size={20} strokeWidth={focused ? 2.2 : 1.8} />
-              {focused && (
-                <View className="w-1.5 h-1.5 rounded-full bg-white mt-1 shadow-sm shadow-white" />
-              )}
-            </View>
+            <TabBarIcon Icon={User} color={color} focused={focused} />
           ),
         }}
       />
@@ -123,15 +115,34 @@ export default function TabsLayout() {
           title: "Admin",
           href: isAdmin ? "/(tabs)/admin" : null,
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center">
-              <Shield color={color} size={20} strokeWidth={focused ? 2.2 : 1.8} />
-              {focused && (
-                <View className="w-1.5 h-1.5 rounded-full bg-white mt-1 shadow-sm shadow-white" />
-              )}
-            </View>
+            <TabBarIcon Icon={Shield} color={color} focused={focused} />
           ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  activeIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#FFFFFF",
+    marginTop: 4,
+    shadowColor: "#FFFFFF",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.7,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tabBarTopBorder: {
+    height: 1,
+    width: "100%",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+  },
+});

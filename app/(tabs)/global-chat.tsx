@@ -515,9 +515,9 @@ export default function GlobalChat() {
             <Pressable
               onPress={() => handleSend()}
               disabled={isSending || (!inputText.trim() && !selectedFile)}
-              className={`w-9 h-9 rounded-full items-center justify-center ${
+              className={`w-9 h-9 rounded-full items-center justify-center active:opacity-75 ${
                 (inputText.trim() || selectedFile) && !isSending
-                  ? "bg-white shadow-md shadow-white/20 active:opacity-75"
+                  ? "bg-white"
                   : "bg-[#181820] opacity-50"
               }`}
             >
