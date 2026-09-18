@@ -34,6 +34,14 @@ type ChatRow = {
   content: string;
 };
 
+function sanitizeReply(text: string): string {
+  return text
+    .trim()
+    .replace(/^```(?:markdown|json|text)?\n?/i, "")
+    .replace(/\n?```$/i, "")
+    .trim();
+}
+
 /**
  * Calls Google Gemini generateContent with gemini-pro-latest.
  */
@@ -95,7 +103,7 @@ async function callGemini(
     throw new Error("Gemini returned empty text response");
   }
 
-  return reply;
+  return sanitizeReply(reply);
 }
 
 /**
@@ -140,7 +148,7 @@ async function callGroq(
     throw new Error("Groq returned empty text response");
   }
 
-  return reply;
+  return sanitizeReply(reply);
 }
 
 serve(async (req: Request) => {
@@ -238,7 +246,7 @@ serve(async (req: Request) => {
         ? engagedTitles.map((t) => `"${t}"`).join(", ")
         : "no recent items yet";
 
-    const systemPrompt = `You are Alphadex's AI study guide. This learner's interests: ${topicsText}. They've recently engaged with: ${titlesText}. Give encouraging, concise, educational guidance that references their actual learning activity where relevant — don't just answer generically.`;
+    const systemPrompt = `You are Alphadex's AI study guide. This learner's interests: ${topicsText}. They've recently engaged with: ${titlesText}. Give encouraging, concise, educational guidance that references their actual learning activity where relevant — don't just answer generically. Format your response using clean markdown — use **bold** for key terms, ## headings only when organizing a genuinely multi-part answer, and - bullet points for lists. Do not wrap your entire response in a code block.`;
 
     let reply: string | null = null;
     let geminiError: string | null = null;

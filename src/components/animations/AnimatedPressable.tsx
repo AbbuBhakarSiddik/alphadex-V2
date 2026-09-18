@@ -6,8 +6,6 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 
-const AnimatedPressableComponent = Animated.createAnimatedComponent(Pressable);
-
 interface AnimatedPressableProps extends PressableProps {
   scaleTo?: number;
   style?: StyleProp<ViewStyle>;
@@ -47,13 +45,15 @@ export function AnimatedPressable({
   };
 
   return (
-    <AnimatedPressableComponent
+    <Pressable
       {...props}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={[animatedStyle, style]}
+      style={style}
     >
-      {children}
-    </AnimatedPressableComponent>
+      <Animated.View style={animatedStyle}>
+        {children}
+      </Animated.View>
+    </Pressable>
   );
 }

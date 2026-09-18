@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  StyleSheet,
+  Keyboard,
+  Pressable,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
@@ -22,6 +25,7 @@ import { useTutorChat } from "../../src/features/assistant/hooks";
 import type { TutorMessage } from "../../src/features/assistant/types";
 import { AuroraBackground } from "../../src/components/ui/AuroraBackground";
 import { AnimatedPressable } from "../../src/components/animations/AnimatedPressable";
+import Markdown from "react-native-markdown-display";
 
 const SUGGESTED_PROMPTS = [
   "Summarize today's feed 📰",
@@ -29,6 +33,19 @@ const SUGGESTED_PROMPTS = [
   "Quiz me on computer science 💻",
   "Recommend what to study next 🎯",
 ];
+
+const markdownStyles = StyleSheet.create({
+  body: { color: "#1A1A1A", fontSize: 15, lineHeight: 22 },
+  heading1: { fontSize: 19, fontWeight: "700", color: "#FF6B35", marginTop: 8, marginBottom: 4 },
+  heading2: { fontSize: 17, fontWeight: "700", color: "#1A1A1A", marginTop: 8, marginBottom: 4 },
+  strong: { fontWeight: "700", color: "#1A1A1A" },
+  bullet_list: { marginVertical: 4 },
+  ordered_list: { marginVertical: 4 },
+  list_item: { marginBottom: 4 },
+  code_inline: { backgroundColor: "#F5F5F5", padding: 4, borderRadius: 4, fontFamily: "Courier New" },
+  code_block: { backgroundColor: "#F5F5F5", padding: 10, borderRadius: 8, fontFamily: "Courier New" },
+  paragraph: { marginTop: 0, marginBottom: 8 },
+});
 
 function formatTime(isoString?: string): string {
   if (!isoString) return "";
@@ -70,17 +87,16 @@ export default function AssistantScreen() {
 
     return (
       <View
-        className={`mb-4 flex-row items-end gap-2 px-4 ${
-          isUser ? "justify-end" : "justify-start"
-        }`}
+        className={`mb-4 flex-row ${isUser ? "items-end justify-end" : "items-start justify-start"
+          } gap-2 px-4`}
       >
         {!isUser && (
-          <View className="w-7 h-7 rounded-full bg-[#181824] border border-white/20 items-center justify-center mb-1">
+          <View className="w-7 h-7 rounded-full bg-[#181824] border border-white/20 items-center justify-center mt-1">
             <Bot size={14} color="#FFFFFF" strokeWidth={1.8} />
           </View>
         )}
 
-        <View className={`max-w-[80%] ${isUser ? "items-end" : "items-start"}`}>
+        <View className={isUser ? "max-w-[80%] items-end" : "flex-1 items-start"}>
           {!isUser && (
             <Text className="text-[10px] font-mono font-medium text-[#71717A] mb-1 ml-1 uppercase tracking-wider">
               ALPHADEX // AI TUTOR
@@ -88,25 +104,23 @@ export default function AssistantScreen() {
           )}
 
           <View
-            className={`px-4 py-3 rounded-2xl ${
-              isUser
+            className={`px-4 py-3 rounded-2xl ${isUser
                 ? "bg-white rounded-br-xs shadow-md shadow-white/10"
-                : "bg-[#0E0E14]/90 rounded-bl-xs border border-white/10"
-            }`}
-          >
-            <Text
-              className={`text-sm leading-5 ${
-                isUser ? "text-black font-medium" : "text-[#F5F5F7] font-normal"
+                : "w-full bg-white rounded-bl-xs border border-[#E8E8E8] shadow-sm"
               }`}
-            >
-              {item.content}
-            </Text>
+          >
+            {isUser ? (
+              <Text className="text-sm leading-5 text-black font-medium">
+                {item.content}
+              </Text>
+            ) : (
+              <Markdown style={markdownStyles}>{item.content}</Markdown>
+            )}
           </View>
 
           <Text
-            className={`text-[10px] text-[#52525B] mt-1 font-mono ${
-              isUser ? "mr-1 text-right" : "ml-1 text-left"
-            }`}
+            className={`text-[10px] text-[#52525B] mt-1 font-mono ${isUser ? "mr-1 text-right" : "ml-1 text-left"
+              }`}
           >
             {formatTime(item.created_at)}
           </Text>
@@ -119,17 +133,17 @@ export default function AssistantScreen() {
     if (!isSending) return null;
 
     return (
-      <View className="mb-4 flex-row items-end gap-2 px-4 justify-start">
-        <View className="w-7 h-7 rounded-full bg-[#181824] border border-white/20 items-center justify-center mb-1">
+      <View className="mb-4 flex-row items-start gap-2 px-4 justify-start">
+        <View className="w-7 h-7 rounded-full bg-[#181824] border border-white/20 items-center justify-center mt-1">
           <Bot size={14} color="#FFFFFF" strokeWidth={1.8} />
         </View>
-        <View className="max-w-[80%] items-start">
+        <View className="flex-1 items-start">
           <Text className="text-[10px] font-mono font-medium text-[#71717A] mb-1 ml-1 uppercase tracking-wider">
             ALPHADEX // AI TUTOR
           </Text>
-          <View className="px-4 py-2.5 bg-[#0E0E14]/90 rounded-2xl rounded-bl-xs border border-white/10 flex-row gap-2 items-center">
-            <ActivityIndicator size="small" color="#FFFFFF" />
-            <Text className="text-xs text-[#A1A1AA] font-mono">
+          <View className="px-4 py-2.5 bg-white rounded-2xl rounded-bl-xs border border-[#E8E8E8] flex-row gap-2 items-center shadow-sm">
+            <ActivityIndicator size="small" color="#FF6B35" />
+            <Text className="text-xs text-[#71717A] font-mono">
               Computing response...
             </Text>
           </View>
@@ -138,7 +152,23 @@ export default function AssistantScreen() {
     );
   }, [isSending]);
 
-  const composerBottomPadding = (insets.bottom > 0 ? insets.bottom : 8) + 54;
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const bottomInset = insets.bottom > 0 ? insets.bottom : 8;
+  const composerBottomPadding = isKeyboardVisible ? 8 : bottomInset + 54;
 
   return (
     <AuroraBackground>
@@ -278,14 +308,13 @@ export default function AssistantScreen() {
               className="flex-1 bg-[#12121A] rounded-full px-4 py-2.5 text-sm text-[#F5F5F7] border border-white/15"
             />
 
-            <AnimatedPressable
+            <Pressable
               onPress={() => handleSend()}
               disabled={!inputText.trim() || isSending}
-              className={`w-9 h-9 rounded-full items-center justify-center ${
-                inputText.trim() && !isSending
-                  ? "bg-white shadow-md shadow-white/20"
+              className={`w-9 h-9 rounded-full items-center justify-center ${inputText.trim() && !isSending
+                  ? "bg-white shadow-md shadow-white/20 active:opacity-75"
                   : "bg-[#181820] opacity-50"
-              }`}
+                }`}
             >
               {isSending ? (
                 <ActivityIndicator size="small" color="#000000" />
@@ -296,7 +325,7 @@ export default function AssistantScreen() {
                   strokeWidth={2}
                 />
               )}
-            </AnimatedPressable>
+            </Pressable>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

@@ -8,6 +8,8 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Pressable,
+  Keyboard,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
@@ -153,7 +155,24 @@ export default function GlobalChat() {
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const currentUserId = session?.user?.id;
-  const composerBottomPadding = (insets.bottom > 0 ? insets.bottom : 8) + 54;
+
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const bottomInset = insets.bottom > 0 ? insets.bottom : 8;
+  const composerBottomPadding = isKeyboardVisible ? 8 : bottomInset + 54;
 
   const {
     messages,
@@ -446,12 +465,12 @@ export default function GlobalChat() {
                   {selectedFile.name}
                 </Text>
               </View>
-              <AnimatedPressable
+              <Pressable
                 onPress={() => setSelectedFile(null)}
-                className="px-2 py-1 bg-white/10 rounded-md"
+                className="px-2 py-1 bg-white/10 rounded-md active:opacity-75"
               >
                 <Text className="text-xs text-[#A1A1AA] font-medium">Remove</Text>
-              </AnimatedPressable>
+              </Pressable>
             </View>
           )}
 
@@ -461,22 +480,22 @@ export default function GlobalChat() {
             className="border-t border-white/10 bg-black/60 backdrop-blur-md px-4 pt-3 flex-row items-center gap-2"
           >
             {/* Image Picker Button */}
-            <AnimatedPressable
+            <Pressable
               onPress={() => handlePickImage()}
               disabled={isSending}
-              className="w-9 h-9 rounded-full bg-[#14141A] items-center justify-center border border-white/15 active:bg-white/15"
+              className="w-9 h-9 rounded-full bg-[#14141A] items-center justify-center border border-white/15 active:bg-white/15 active:opacity-75"
             >
               <ImageIcon size={16} color="#A1A1AA" strokeWidth={1.8} />
-            </AnimatedPressable>
+            </Pressable>
 
             {/* PDF Document Picker Button */}
-            <AnimatedPressable
+            <Pressable
               onPress={() => handlePickDocument()}
               disabled={isSending}
-              className="w-9 h-9 rounded-full bg-[#14141A] items-center justify-center border border-white/15 active:bg-white/15"
+              className="w-9 h-9 rounded-full bg-[#14141A] items-center justify-center border border-white/15 active:bg-white/15 active:opacity-75"
             >
               <FileText size={16} color="#A1A1AA" strokeWidth={1.8} />
-            </AnimatedPressable>
+            </Pressable>
 
             {/* Text Input */}
             <TextInput
@@ -493,12 +512,12 @@ export default function GlobalChat() {
             />
 
             {/* Send Button */}
-            <AnimatedPressable
+            <Pressable
               onPress={() => handleSend()}
               disabled={isSending || (!inputText.trim() && !selectedFile)}
               className={`w-9 h-9 rounded-full items-center justify-center ${
                 (inputText.trim() || selectedFile) && !isSending
-                  ? "bg-white shadow-md shadow-white/20"
+                  ? "bg-white shadow-md shadow-white/20 active:opacity-75"
                   : "bg-[#181820] opacity-50"
               }`}
             >
@@ -511,7 +530,7 @@ export default function GlobalChat() {
                   strokeWidth={2}
                 />
               )}
-            </AnimatedPressable>
+            </Pressable>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
